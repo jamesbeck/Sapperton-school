@@ -40,14 +40,14 @@ export default function HeadMessage() {
                 whileInView={{ opacity: 1, top: 0 }}
                 transition={{ duration: 1 }}
                 viewport={{ once: true, amount: 0.5 }}
-                className="relative"
+                className="relative w-full h-full"
               >
                 <Image
                   src="/head.png"
                   alt="Head Message"
                   width={1000}
                   height={600}
-                  className="rounded-xl shadow-lg/50 shadow-foreground"
+                  className="rounded-xl shadow-lg/50 shadow-foreground object-cover w-full h-full"
                 />
               </motion.div>
             </div>
@@ -94,16 +94,18 @@ export default function HeadMessage() {
             className="relative"
           >
             <div
-              className={`text-sapperton-green text-3xl md:text-5xl text-center ${bodoniModa.className} flex flex-col text-balance max-w-2xl mx-auto `}
+              className={`text-sapperton-green text-3xl md:text-5xl text-center ${bodoniModa.className} flex flex-col text-balance max-w-2xl mx-auto -mb-12`}
             >
               <div className="text-7xl relative top-9 text-left">&ldquo;</div>
               Every child who walks through our doors is known, valued, and
               encouraged to shine.
               <div className="text-7xl  text-right">&rdquo;</div>
             </div>
+            <div className="text-foreground text-lg text-center">
+              Meg Crampton - Head Teacher
+            </div>
           </motion.div>
         </div>
-        <p></p>
       </Container>
     </div>
   );
