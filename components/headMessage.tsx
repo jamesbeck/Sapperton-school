@@ -8,11 +8,20 @@ export default function HeadMessage() {
   return (
     <div id="head-message">
       <Container>
+        <div className="flex justify-center mb-8">
+          <Image
+            src="/church.png"
+            alt="Church"
+            width={100}
+            height={100}
+            className=""
+          />
+        </div>
         <motion.div
           initial={{ opacity: 0, top: -50 }}
           whileInView={{ opacity: 1, top: 0 }}
           transition={{ duration: 1 }}
-          viewport={{ once: true, amount: "all" }}
+          viewport={{ once: true, amount: 0.5 }}
           className="relative"
         >
           <h2
@@ -30,7 +39,7 @@ export default function HeadMessage() {
                 initial={{ opacity: 0, top: -50 }}
                 whileInView={{ opacity: 1, top: 0 }}
                 transition={{ duration: 1 }}
-                viewport={{ once: true, amount: "all" }}
+                viewport={{ once: true, amount: 0.5 }}
                 className="relative"
               >
                 <Image
@@ -48,7 +57,7 @@ export default function HeadMessage() {
                 initial={{ opacity: 0, top: -50 }}
                 whileInView={{ opacity: 1, top: 0 }}
                 transition={{ duration: 1 }}
-                viewport={{ once: true, amount: "all" }}
+                viewport={{ once: true, amount: 0.25 }}
                 className="relative"
               >
                 <p>
@@ -81,7 +90,7 @@ export default function HeadMessage() {
             initial={{ opacity: 0, top: -50 }}
             whileInView={{ opacity: 1, top: 0 }}
             transition={{ duration: 1 }}
-            viewport={{ once: true, amount: "all" }}
+            viewport={{ once: true, amount: 0.5 }}
             className="relative"
           >
             <div
