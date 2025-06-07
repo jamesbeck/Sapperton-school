@@ -11,7 +11,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/utils/cn";
 import { HoverScale } from "@/utils/hoverScale";
-import { RequestAVisit } from "./requestAVisit";
 
 const menu = [
   {

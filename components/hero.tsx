@@ -7,7 +7,6 @@ import { bodoniModa } from "@/fonts";
 import { ChevronDown } from "lucide-react";
 import { AnimateIn } from "@/utils/animateIn";
 import { HoverScale } from "@/utils/hoverScale";
-import { RequestAVisit } from "./requestAVisit";
 
 export default function Hero() {
   return (

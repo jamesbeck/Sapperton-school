@@ -1,5 +1,4 @@
 import { HoverScale } from "@/utils/hoverScale";
-import { AnimateIn } from "@/utils/animateIn";
 import Button from "./ui/button";
 import { RouteIcon } from "lucide-react";
 
