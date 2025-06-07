@@ -2,7 +2,7 @@
 import Container from "@/components/container";
 import { bodoniModa } from "../fonts";
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { AnimateIn } from "@/utils/animateIn";
 
 export default function HeadMessage() {
   return (
@@ -17,31 +17,19 @@ export default function HeadMessage() {
             className=""
           />
         </div>
-        <motion.div
-          initial={{ opacity: 0, top: -50 }}
-          whileInView={{ opacity: 1, top: 0 }}
-          transition={{ duration: 1 }}
-          viewport={{ once: true, amount: 0.5 }}
-          className="relative"
-        >
+        <AnimateIn>
           <h2
             className={`text-4xl md:text-7xl tracking-tighter ${bodoniModa.className} text-center md:mb-16 mb-8 text-balance leading-tight`}
           >
             A warm welcome from our <br />
             <span className={`text-sapperton-green italic `}>Head Teacher</span>
           </h2>
-        </motion.div>
+        </AnimateIn>
 
         <div className="flex flex-col justify-center gap-8 md:gap-16">
           <div className="flex flex-col md:flex-row  md:p-0 gap-8 md:gap-16 justify-between">
             <div className="flex-1/2">
-              <motion.div
-                initial={{ opacity: 0, top: -50 }}
-                whileInView={{ opacity: 1, top: 0 }}
-                transition={{ duration: 1 }}
-                viewport={{ once: true, amount: 0.5 }}
-                className="relative w-full h-full"
-              >
+              <AnimateIn className="relative w-full h-full">
                 <Image
                   src="/head.png"
                   alt="Head Message"
@@ -49,50 +37,46 @@ export default function HeadMessage() {
                   height={600}
                   className="rounded-xl shadow-lg/50 shadow-foreground object-cover w-full h-full"
                 />
-              </motion.div>
+              </AnimateIn>
             </div>
 
             <div className="text-center text-pretty flex-1/2">
-              <motion.div
-                initial={{ opacity: 0, top: -50 }}
-                whileInView={{ opacity: 1, top: 0 }}
-                transition={{ duration: 1 }}
-                viewport={{ once: true, amount: 0.25 }}
-                className="relative"
-              >
+              <AnimateIn>
                 <p>
-                  At the heart of our community lies a vibrant school where
-                  curiosity is celebrated, kindness is nurtured, and every child
-                  is encouraged to flourish. We believe that education is more
-                  than just academics – it’s about building confidence,
-                  fostering creativity, and preparing young minds to make a
-                  meaningful impact in the world.
+                  I am excited to welcome you to Sapperton C of E Primary
+                  School.
                 </p>
-
                 <p>
-                  Our dedicated team is passionate about creating a warm,
-                  inclusive environment where pupils feel safe, supported, and
-                  inspired to reach their full potential. We work closely with
-                  families to ensure that each child’s journey is personal,
-                  purposeful, and full of promise.
+                  Nestled in the heart of the Cotswolds, our small village
+                  school is a warm and welcoming community. Through a nurturing
+                  environment and rich, varied and creative curriculum, everyone
+                  develops faith in each other and ourselves, and are inspired
+                  to be successful in everything we do. Our local environment
+                  allows us to fully embrace the outdoors and extends our
+                  learning into a wide natural space. Providing children with
+                  experiences away from the classroom, such as through trips
+                  linked to our curricula, residentials, sporting events and
+                  music concerts creates excited and aspirational learners.{" "}
                 </p>
-
                 <p>
-                  Whether you’re new to the area or simply seeking a school that
-                  feels like home, we invite you to discover the spirit,
-                  ambition, and care that define our school. Together, we can
-                  shape a future full of opportunity.
+                  The Christian values of love, honour and trust underpin our
+                  school and enable all of our community to flourish and learn.
+                  Together, we cultivate a spirit of kindness, resilience and
+                  ambition that prepares our children for future success.{" "}
                 </p>
-              </motion.div>
+                <p>
+                  We are proud of our school and would welcome you to come and
+                  see just how much Sapperton could offer your child.{" "}
+                </p>
+                <p>
+                  <b>Mrs Meg Crampton</b>
+                  <br />
+                  Head of School
+                </p>
+              </AnimateIn>
             </div>
           </div>
-          <motion.div
-            initial={{ opacity: 0, top: -50 }}
-            whileInView={{ opacity: 1, top: 0 }}
-            transition={{ duration: 1 }}
-            viewport={{ once: true, amount: 0.5 }}
-            className="relative"
-          >
+          <AnimateIn>
             <div
               className={`text-sapperton-green text-3xl md:text-5xl text-center ${bodoniModa.className} flex flex-col text-balance max-w-2xl mx-auto -mb-12`}
             >
@@ -102,9 +86,9 @@ export default function HeadMessage() {
               <div className="text-7xl  text-right">&rdquo;</div>
             </div>
             <div className="text-foreground text-lg text-center">
-              Meg Crampton - Head Teacher
+              Mrs Meg Crampton
             </div>
-          </motion.div>
+          </AnimateIn>
         </div>
       </Container>
     </div>

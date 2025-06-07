@@ -10,6 +10,8 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/utils/cn";
+import { HoverScale } from "@/utils/hoverScale";
+import { RequestAVisit } from "./requestAVisit";
 
 const menu = [
   {
@@ -197,6 +199,13 @@ export default function Header() {
   const [logoOpacity, setLogoOpacity] = useState(1);
   const [vh, setVh] = useState(0);
 
+  //close the open menu section when menu closes
+  useEffect(() => {
+    if (!open) {
+      setOpenSection(null);
+    }
+  }, [open]);
+
   const { scrollY } = useScroll();
 
   useEffect(() => {
@@ -214,40 +223,11 @@ export default function Header() {
 
   return (
     <>
-      <div className={cn("fixed w-full z-100 px-8 md:px-16 pb-4")}>
-        <div className="w-full mx-auto max-w-7xl relative h-auto py-4">
-          <AnimatePresence>
-            <motion.div
-              // initial={{ opacity: 1 }}
-              style={{ opacity: logoOpacity }}
-              // transition={{ duration: 0.5 }}
-            >
-              <Image
-                src="/logo.png"
-                alt="Logo"
-                width={400}
-                height={120}
-                className="w-auto h-16 md:h-24"
-              />
-            </motion.div>
-          </AnimatePresence>
-          <div className="absolute right-0 top-0 bg-sapperton-green h-full p-1 flex flex-col justify-end">
-            {!open ? (
-              <Menu
-                className="text-white"
-                size={48}
-                onClick={() => setOpen(!open)}
-              />
-            ) : (
-              <X
-                className="text-white"
-                size={48}
-                onClick={() => setOpen(!open)}
-              />
-            )}
-          </div>
-        </div>
-      </div>
+      <LogoAndMenuButton
+        logoOpacity={logoOpacity}
+        open={false}
+        setOpen={setOpen}
+      />
 
       <AnimatePresence mode="wait" initial={false}>
         {open && (
@@ -258,39 +238,8 @@ export default function Header() {
             transition={{ duration: 0.5 }}
             className="fixed top-0 left-0 right-0 z-100 h-full w-full"
           >
-            <div
-              className={cn("fixed w-full z-100 px-8 md:px-16 pb-4")}
-              style={{
-                background:
-                  "linear-gradient(to bottom, #347560, 95%, rgba(255,0,0,0))",
-              }}
-            >
-              <div className="w-full mx-auto max-w-7xl relative h-auto py-4">
-                <Image
-                  src="/logo.png"
-                  alt="Logo"
-                  width={400}
-                  height={120}
-                  className="w-auto h-16 md:h-24"
-                />
+            <LogoAndMenuButton logoOpacity={1} open={true} setOpen={setOpen} />
 
-                <div className="absolute right-0 top-0 bg-sapperton-green h-full p-1 flex flex-col justify-end">
-                  {!open ? (
-                    <Menu
-                      className="text-white"
-                      size={48}
-                      onClick={() => setOpen(!open)}
-                    />
-                  ) : (
-                    <X
-                      className="text-white"
-                      size={48}
-                      onClick={() => setOpen(!open)}
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
             <div className="w-full h-full bg-sapperton-green p-8 pt-24 md:pt-32 md:px-16 overflow-scroll text-white ">
               <div className="w-full mx-auto max-w-7xl min-h-full md:h-full py-4">
                 <div className="flex flex-col space-y-8 w-full min-h-full">
@@ -395,5 +344,51 @@ export default function Header() {
         )}
       </AnimatePresence>
     </>
+  );
+}
+
+function LogoAndMenuButton({
+  logoOpacity,
+  open,
+  setOpen,
+}: {
+  logoOpacity: number;
+  open: boolean;
+  setOpen: (open: boolean) => void;
+}) {
+  return (
+    <div className={cn("fixed w-full z-100 px-8 md:px-16 pb-4")}>
+      <div className="w-full mx-auto max-w-7xl relative h-auto py-4">
+        <AnimatePresence>
+          <motion.div style={{ opacity: logoOpacity }}>
+            <Image
+              src="/logo.png"
+              alt="Logo"
+              width={400}
+              height={120}
+              className="w-auto h-16 md:h-24"
+            />
+          </motion.div>
+        </AnimatePresence>
+
+        <div className="absolute right-0 top-0 bg-sapperton-green h-full p-1 flex flex-col justify-end rounded-b-md">
+          <HoverScale>
+            {!open ? (
+              <Menu
+                className="text-white"
+                size={48}
+                onClick={() => setOpen(!open)}
+              />
+            ) : (
+              <X
+                className="text-white"
+                size={48}
+                onClick={() => setOpen(!open)}
+              />
+            )}
+          </HoverScale>
+        </div>
+      </div>
+    </div>
   );
 }

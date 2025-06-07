@@ -5,7 +5,9 @@ import Image from "next/image";
 import { TypeAnimation } from "react-type-animation";
 import { bodoniModa } from "@/fonts";
 import { ChevronDown } from "lucide-react";
-import { motion } from "framer-motion";
+import { AnimateIn } from "@/utils/animateIn";
+import { HoverScale } from "@/utils/hoverScale";
+import { RequestAVisit } from "./requestAVisit";
 
 export default function Hero() {
   return (
@@ -87,17 +89,15 @@ export default function Hero() {
           </div>
         </div>
       </div>
-      <motion.div
-        initial={{ opacity: 0, top: -50 }}
-        animate={{ opacity: 1, top: 0 }}
-        whileHover={{ scale: 1.05 }}
-      >
-        <div className="absolute bottom-8 md:bottom-24 left-1/2 -translate-x-1/2 bg-white p-2 rounded-full text-foreground">
-          <a href="#head-message">
-            <ChevronDown className="w-8 h-8 md:w-12 md:h-12 animate" />
-          </a>
-        </div>
-      </motion.div>
+      <AnimateIn>
+        <HoverScale>
+          <div className="absolute bottom-8 md:bottom-24 left-1/2 -translate-x-1/2 bg-white p-2 rounded-full text-foreground">
+            <a href="#head-message">
+              <ChevronDown className="w-8 h-8 md:w-12 md:h-12 animate" />
+            </a>
+          </div>
+        </HoverScale>
+      </AnimateIn>
     </div>
   );
 }
