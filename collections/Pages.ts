@@ -7,14 +7,14 @@ export const Pages: CollectionConfig = {
     useAsTitle: "title",
     livePreview: {
       url: (doc) => {
-        return `/${doc.data.slug}`;
+        return `/preview/${doc.data.slug}?key=${process.env.PREVIEW_KEY}`;
       },
     },
     defaultColumns: ["title", "slug", "banner", "status"],
   },
   versions: {
     drafts: {
-      autosave: true,
+      autosave: false,
     },
   },
 

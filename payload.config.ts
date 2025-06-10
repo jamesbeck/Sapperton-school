@@ -16,6 +16,8 @@ import { Events } from "./collections/Events";
 import { Pages } from "./collections/Pages";
 import { MenuItems } from "./collections/MenuItems";
 import slugify from "slugify";
+import { Logo } from "./components/logo";
+// import { Icon } from "./components/icon";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -25,6 +27,17 @@ export default buildConfig({
     user: Users.slug,
     importMap: {
       baseDir: path.resolve(dirname),
+    },
+    meta: {
+      titleSuffix: "Sapperton School",
+    },
+    components: {
+      graphics: {
+        // @ts-expect-error can't work this out
+        Logo: Logo,
+
+        // Icon: Icon,
+      },
     },
   },
   collections: [Users, Media, Staff, Events, Pages, MenuItems],
