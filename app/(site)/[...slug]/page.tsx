@@ -37,14 +37,16 @@ export default async function ContentPage({
   const page = menuItems.docs[0].Page as Page;
   const banner = page.banner as Media;
 
+  console.log(banner, "banner");
+
   return (
     <div>
       <RefreshRouteOnSave />
       <Banner
         title={page.title || ""}
-        url={banner.url || ""}
-        focalX={banner.focalX || 0}
-        focalY={banner.focalY || 0}
+        url={banner?.url || ""}
+        focalX={banner?.focalX || 0}
+        focalY={banner?.focalY || 0}
       />
       <Container>
         <RichText data={page.body} className="page-content" />
