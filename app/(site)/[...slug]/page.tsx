@@ -41,7 +41,7 @@ export default async function ContentPage({
 
   return (
     <div>
-      <RefreshRouteOnSave />
+      {/* <RefreshRouteOnSave /> */}
       <Banner
         title={page.title || ""}
         url={banner?.url || ""}
