@@ -2,7 +2,7 @@ import { getPayload } from "payload";
 import configPromise from "@payload-config";
 import Banner from "@/components/banner";
 import Container from "@/components/container";
-import { RefreshRouteOnSave } from "@/utils/refreshRouteOnSave";
+// import { RefreshRouteOnSave } from "@/utils/refreshRouteOnSave";
 import { notFound } from "next/navigation";
 import { Page, Media } from "@/payload-types";
 import { RichText } from "@payloadcms/richtext-lexical/react";
