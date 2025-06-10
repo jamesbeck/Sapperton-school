@@ -11,91 +11,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/utils/cn";
 import { HoverScale } from "@/utils/hoverScale";
-
-const menu = [
-  {
-    name: "Our School",
-    href: "/our-school",
-    children: [
-      {
-        name: "About Us",
-        href: "/about-us",
-      },
-      {
-        name: "Admissions",
-        href: "/admissions",
-      },
-      {
-        name: "Governors",
-        href: "/governors",
-      },
-      {
-        name: "PTA",
-        href: "/pta",
-      },
-      {
-        name: "Opening Hours",
-        href: "/opening-hours",
-      },
-      {
-        name: "Staff",
-        href: "/staff",
-      },
-      {
-        name: "Vision",
-        href: "/vision",
-      },
-      {
-        name: "Vacancies",
-        href: "/vacancies",
-      },
-      {
-        name: "School Council",
-        href: "/school-council",
-      },
-    ],
-  },
-  {
-    name: "Classes",
-    href: "/classes",
-    children: [
-      { name: "Reception", href: "/reception" },
-      { name: "Maple", href: "/maple" },
-      { name: "Rowan", href: "/rowan" },
-      { name: "Elder", href: "/elder" },
-    ],
-  },
-  {
-    name: "Curriculum",
-    href: "/curriculum",
-    children: [
-      { name: "Intent", href: "/intent" },
-      { name: "Art & Design", href: "/art-and-design" },
-      { name: "Computing", href: "/computing" },
-      { name: "Design & Technology", href: "/design-and-technology" },
-      { name: "Reading", href: "/reading" },
-      { name: "Writing", href: "/writing" },
-      { name: "EYFS", href: "/eyfs" },
-      { name: "Geography", href: "/geography" },
-      { name: "History", href: "/history" },
-      { name: "Maths", href: "/maths" },
-      { name: "Foreign Languages", href: "/foreign-languages" },
-      { name: "Music", href: "/music" },
-      { name: "PE", href: "/pe" },
-      { name: "PHSE", href: "/phse" },
-      { name: "RE", href: "/re" },
-      { name: "Science", href: "/science" },
-    ],
-  },
-  {
-    name: "Parents",
-    href: "/parents",
-  },
-  {
-    name: "News & Events",
-    href: "/news-and-events",
-  },
-];
+import { GroupedMenuItem } from "@/types";
 
 const subMenu = [
   {
@@ -192,7 +108,11 @@ const subMenu = [
   },
 ];
 
-export default function Header() {
+export default function Header({
+  menuItems,
+}: {
+  menuItems: GroupedMenuItem[];
+}) {
   const [open, setOpen] = useState(false);
   const [openSection, setOpenSection] = useState<number | null>(null);
   const [logoOpacity, setLogoOpacity] = useState(1);
@@ -244,7 +164,7 @@ export default function Header() {
                 <div className="flex flex-col space-y-8 w-full min-h-full">
                   <div className="flex-1 flex items-center">
                     <div className="w-full md:max-w-md">
-                      {menu.map((item, i) => (
+                      {menuItems.map((item, i) => (
                         <div key={i}>
                           <div
                             className={cn(
@@ -258,7 +178,7 @@ export default function Header() {
                                 : setOpenSection(i)
                             }
                           >
-                            {item.name}
+                            {item.title}
                             <ChevronRight
                               size={32}
                               className={cn(
@@ -284,8 +204,9 @@ export default function Header() {
                                     key={i}
                                     href={child.href}
                                     className="hover:underline"
+                                    onClick={() => setOpen(false)}
                                   >
-                                    <div>{child.name}</div>
+                                    <div>{child.title}</div>
                                   </Link>
                                 ))}
                               </div>
@@ -360,13 +281,15 @@ function LogoAndMenuButton({
       <div className="w-full mx-auto max-w-7xl relative h-auto py-4">
         <AnimatePresence>
           <motion.div style={{ opacity: logoOpacity }}>
-            <Image
-              src="/logo.png"
-              alt="Logo"
-              width={400}
-              height={120}
-              className="w-auto h-16 md:h-24"
-            />
+            <Link href="/">
+              <Image
+                src="/logo.png"
+                alt="Logo"
+                width={400}
+                height={120}
+                className="w-auto h-16 md:h-24"
+              />
+            </Link>
           </motion.div>
         </AnimatePresence>
 

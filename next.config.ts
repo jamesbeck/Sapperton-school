@@ -1,7 +1,17 @@
+import { withPayload } from "@payloadcms/next/withPayload";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "s3.eu-west-1.wasabisys.com",
+        port: "",
+        pathname: "/sapperton/**",
+      },
+    ],
+  },
 };
 
-export default nextConfig;
+export default withPayload(nextConfig);
