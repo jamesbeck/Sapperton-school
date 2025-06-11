@@ -16,8 +16,6 @@ import { Events } from "./collections/Events";
 import { Pages } from "./collections/Pages";
 import { MenuItems } from "./collections/MenuItems";
 import slugify from "slugify";
-import { Logo } from "./components/logo";
-// import { Icon } from "./components/icon";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -33,8 +31,9 @@ export default buildConfig({
     },
     components: {
       graphics: {
-        // @ts-expect-error can't work this out
-        Logo: Logo,
+        Logo: {
+          path: "/components/logo",
+        },
 
         // Icon: Icon,
       },

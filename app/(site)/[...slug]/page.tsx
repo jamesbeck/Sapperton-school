@@ -18,24 +18,6 @@ export default async function ContentPage({
 
   const payload = await getPayload({ config: configPromise });
 
-  // const menuItems = await unstable_cache(
-  //   async () => {
-  //     console.log(Date.now(), "234");
-  //     return payload.find({
-  //       collection: "menuItems",
-  //       where: {
-  //         slug: {
-  //           equals: finalSlug,
-  //         },
-  //       },
-  //       depth: 2,
-  //       // id: "507f1f77bcf86cd799439011",
-  //     });
-  //   },
-  //   [finalSlug],
-  //   { revalidate: 5 }
-  // )();
-
   const menuItems = await payload.find({
     collection: "menuItems",
     where: {
@@ -47,11 +29,11 @@ export default async function ContentPage({
     // id: "507f1f77bcf86cd799439011",
   });
 
-  if (!menuItems.docs?.[0]?.Page) {
+  if (!menuItems.docs?.[0]?.page) {
     return notFound();
   }
 
-  const page = menuItems.docs[0].Page as Page;
+  const page = menuItems.docs[0].page as Page;
   const banner = page.banner as Media;
 
   return (
@@ -90,6 +72,3 @@ export const generateStaticParams = async () => {
     };
   });
 };
-
-export const dynamicParams = true;
-export const revalidate = 60;

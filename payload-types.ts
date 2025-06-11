@@ -251,7 +251,7 @@ export interface MenuItem {
   id: number;
   title: string;
   slug?: string | null;
-  Page?: (number | null) | Page;
+  page?: (number | null) | Page;
   parent?: (number | null) | MenuItem;
   breadcrumbs?:
     | {
@@ -438,7 +438,7 @@ export interface PagesSelect<T extends boolean = true> {
 export interface MenuItemsSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
-  Page?: T;
+  page?: T;
   parent?: T;
   breadcrumbs?:
     | T

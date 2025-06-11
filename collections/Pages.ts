@@ -1,5 +1,5 @@
+import { revalidatePath } from "next/cache";
 import type { CollectionConfig } from "payload";
-import slugify from "slugify";
 
 export const Pages: CollectionConfig = {
   slug: "pages",
@@ -10,12 +10,34 @@ export const Pages: CollectionConfig = {
         return `/preview/${doc.data.slug}?key=${process.env.PREVIEW_KEY}`;
       },
     },
-    defaultColumns: ["title", "slug", "banner", "status"],
+    defaultColumns: ["title", "banner", "status"],
   },
   versions: {
     drafts: {
       autosave: false,
     },
+  },
+  hooks: {
+    afterChange: [
+      //when a page is saved, regenerate the path
+      async ({ doc, req: { payload } }) => {
+        const menuItems = await payload.find({
+          collection: "menuItems",
+          where: {
+            "page.id": {
+              equals: doc.id,
+            },
+          },
+          depth: 1,
+          // id: "507f1f77bcf86cd799439011",
+        });
+
+        menuItems.docs.forEach((item) => {
+          const path = item.breadcrumbs?.[item.breadcrumbs.length - 1].url;
+          if (path) revalidatePath(path);
+        });
+      },
+    ],
   },
 
   access: {
@@ -26,26 +48,6 @@ export const Pages: CollectionConfig = {
       name: "title",
       type: "text",
       required: true,
-    },
-    {
-      name: "slug",
-      type: "text",
-      access: {
-        read: () => true,
-        update: () => false,
-        create: () => false,
-      },
-
-      hooks: {
-        beforeChange: [
-          ({ data }) => {
-            return data?.title
-              ? slugify(data?.title, { lower: true, strict: true })
-              : data?.id;
-          },
-        ],
-      },
-      index: true,
     },
     {
       name: "body",

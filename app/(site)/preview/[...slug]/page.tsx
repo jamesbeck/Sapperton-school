@@ -37,7 +37,7 @@ export default async function ContentPage({
     // id: "507f1f77bcf86cd799439011",
   });
 
-  if (!menuItems.docs?.[0]?.Page) {
+  if (!menuItems.docs?.[0]?.page) {
     return notFound();
   }
 
@@ -48,7 +48,7 @@ export default async function ContentPage({
     depth: 2,
     where: {
       parent: {
-        equals: (menuItems.docs[0].Page as Page)?.id,
+        equals: (menuItems.docs[0].page as Page)?.id,
       },
     },
     sort: "-createdAt",

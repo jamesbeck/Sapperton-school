@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import type { CollectionConfig } from "payload";
 import slugify from "slugify";
 
@@ -8,6 +9,14 @@ export const MenuItems: CollectionConfig = {
     plural: "Main Menu Items",
   },
   admin: { useAsTitle: "title" },
+  hooks: {
+    afterChange: [
+      //when a menu item is saved, regenerate the whole site so top level menu also updates
+      async () => {
+        revalidatePath("/", "layout");
+      },
+    ],
+  },
 
   fields: [
     {
@@ -36,7 +45,7 @@ export const MenuItems: CollectionConfig = {
     },
 
     {
-      name: "Page",
+      name: "page",
       type: "relationship",
       relationTo: "pages",
     },
