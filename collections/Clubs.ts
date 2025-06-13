@@ -1,12 +1,12 @@
 import type { CollectionConfig } from "payload";
 
-export const Staff: CollectionConfig = {
-  slug: "staff",
-  admin: {
-    useAsTitle: "name",
-  },
+export const Clubs: CollectionConfig = {
+  slug: "clubs",
   access: {
     read: () => true,
+  },
+  admin: {
+    useAsTitle: "name",
   },
   fields: [
     {
@@ -15,19 +15,25 @@ export const Staff: CollectionConfig = {
       required: true,
     },
     {
-      name: "position",
+      name: "years",
       type: "text",
       required: true,
     },
     {
-      name: "biography",
+      name: "description",
       type: "richText",
       required: true,
     },
     {
-      name: "image",
+      name: "banner",
       type: "upload",
       relationTo: "media",
+    },
+    {
+      name: "teachers",
+      type: "relationship",
+      relationTo: "staff",
+      hasMany: true,
     },
   ],
 };

@@ -2,15 +2,19 @@ import type { CollectionConfig } from "payload";
 
 export const Media: CollectionConfig = {
   slug: "media",
-
+  folders: true,
   access: {
     read: () => true,
   },
   fields: [
     {
       name: "alt",
+      label: "Description",
+      admin: {
+        description: "Describe the image, this is used for accessibility.",
+      },
       type: "text",
-      required: true,
+      required: false,
     },
   ],
   upload: {

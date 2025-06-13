@@ -12,15 +12,21 @@ import sharp from "sharp";
 import { Users } from "./collections/Users";
 import { Media } from "./collections/Media";
 import { Staff } from "./collections/Staff";
+import { Classes } from "./collections/Classes";
+import { Clubs } from "./collections/Clubs";
 import { Events } from "./collections/Events";
 import { Pages } from "./collections/Pages";
 import { MenuItems } from "./collections/MenuItems";
+import { NewsArticles } from "./collections/NewsArticles";
 import slugify from "slugify";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
 
 export default buildConfig({
+  folders: {
+    browseByFolder: false,
+  },
   admin: {
     user: Users.slug,
     importMap: {
@@ -39,7 +45,17 @@ export default buildConfig({
       },
     },
   },
-  collections: [Users, Media, Staff, Events, Pages, MenuItems],
+  collections: [
+    MenuItems,
+    Pages,
+    Staff,
+    Classes,
+    Clubs,
+    Events,
+    NewsArticles,
+    Media,
+    Users,
+  ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || "",
   typescript: {
