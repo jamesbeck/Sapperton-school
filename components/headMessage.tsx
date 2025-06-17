@@ -3,13 +3,15 @@ import Container from "@/components/container";
 import { bodoniModa } from "../fonts";
 import Image from "next/image";
 import { AnimateIn } from "@/utils/animateIn";
-import { HeadteacherWelcome } from "@/payload-types";
+import { HeadteacherWelcome, Media } from "@/payload-types";
 
 export default function HeadMessage({
   headteacherWelcome,
 }: {
   headteacherWelcome: HeadteacherWelcome;
 }) {
+  const image = headteacherWelcome.image as Media;
+
   return (
     <div id="head-message">
       <Container>
@@ -36,13 +38,16 @@ export default function HeadMessage({
         <div className="flex flex-col justify-center gap-8 md:gap-16">
           <div className="flex flex-col md:flex-row  md:p-0 gap-8 md:gap-16 justify-between">
             <div className="flex-1/2">
-              <AnimateIn className="relative w-full h-full">
+              <AnimateIn className="w-full h-[500px] relative">
                 <Image
-                  src="/head.png"
+                  src={image?.url || ""}
                   alt="Head Message"
                   width={1000}
                   height={600}
-                  className="rounded-xl shadow-lg/50 shadow-foreground object-cover w-full h-full"
+                  className="rounded-md shadow-lg/50 shadow-foreground object-cover w-full h-full"
+                  style={{
+                    objectPosition: `${image?.focalX}% ${image?.focalY}%`,
+                  }}
                 />
               </AnimateIn>
             </div>

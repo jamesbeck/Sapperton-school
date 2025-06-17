@@ -24,5 +24,10 @@ export const HeadteacherWelcome: GlobalConfig = {
       type: "text",
       required: true,
     },
+    {
+      name: "image",
+      type: "upload",
+      relationTo: "media",
+    },
   ],
 };

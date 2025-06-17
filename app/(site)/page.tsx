@@ -8,7 +8,10 @@ export default async function Home({}) {
 
   const headteacherWelcome = await payload.findGlobal({
     slug: "headteacher-welcome",
+    depth: 2,
   });
+
+  console.log(headteacherWelcome);
 
   const heroWords = await payload.findGlobal({
     slug: "hero-words",

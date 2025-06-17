@@ -725,6 +725,7 @@ export interface HeadteacherWelcome {
   jobTitle: string;
   body: string;
   quote: string;
+  image?: (number | null) | Media;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -752,6 +753,7 @@ export interface HeadteacherWelcomeSelect<T extends boolean = true> {
   jobTitle?: T;
   body?: T;
   quote?: T;
+  image?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
