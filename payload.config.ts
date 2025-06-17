@@ -19,6 +19,8 @@ import { Pages } from "./collections/Pages";
 import { MenuItems } from "./collections/MenuItems";
 import { NewsArticles } from "./collections/NewsArticles";
 import slugify from "slugify";
+import { HeroWords } from "./globals/heroWords";
+import { HeadteacherWelcome } from "./globals/headteacherWelcome";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -56,6 +58,7 @@ export default buildConfig({
     Media,
     Users,
   ],
+  globals: [HeroWords, HeadteacherWelcome],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || "",
   typescript: {

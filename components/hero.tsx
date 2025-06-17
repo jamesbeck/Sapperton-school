@@ -7,8 +7,9 @@ import { bodoniModa } from "@/fonts";
 import { ChevronDown } from "lucide-react";
 import { AnimateIn } from "@/utils/animateIn";
 import { HoverScale } from "@/utils/hoverScale";
+import { HeroWord } from "@/payload-types";
 
-export default function Hero() {
+export default function Hero({ words }: { words: HeroWord }) {
   return (
     <div>
       <div className="w-full h-screen relative">
@@ -27,31 +28,8 @@ export default function Hero() {
               >
                 Inspiring young minds <br /> to become
                 <TypeAnimation
-                  sequence={shuffleArray([
-                    "Achievers",
-                    "Role Models",
-                    "Curious",
-                    "Heroes",
-                    "Readers",
-                    "Listeners",
-                    "Citizens",
-                    "Kind Hearts",
-                    "Explorers",
-                    "Trailblazers",
-                    "Story Tellers",
-                    "Pioneers",
-                    "Performers",
-                    "Leaders",
-                    "Champions",
-                    "Team Players",
-                    "Imagineers",
-                    "Problem Solvers",
-                    "Dreamers",
-                    "Thinkers",
-                    "Creators",
-                    "Generous Givers",
-                  ])
-                    .map((item) => [" " + item + ".", 2000])
+                  sequence={shuffleArray(words.words)
+                    .map((item) => [" " + item.word + ".", 2000])
                     .flat()}
                   speed={1}
                   className={`font-bold `}

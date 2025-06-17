@@ -3,8 +3,13 @@ import Container from "@/components/container";
 import { bodoniModa } from "../fonts";
 import Image from "next/image";
 import { AnimateIn } from "@/utils/animateIn";
+import { HeadteacherWelcome } from "@/payload-types";
 
-export default function HeadMessage() {
+export default function HeadMessage({
+  headteacherWelcome,
+}: {
+  headteacherWelcome: HeadteacherWelcome;
+}) {
   return (
     <div id="head-message">
       <Container>
@@ -22,7 +27,9 @@ export default function HeadMessage() {
             className={`text-4xl md:text-7xl tracking-tighter ${bodoniModa.className} text-center md:mb-16 mb-8 text-balance leading-tight`}
           >
             A warm welcome from our <br />
-            <span className={`text-sapperton-green italic `}>Head Teacher</span>
+            <span className={`text-sapperton-green italic `}>
+              {headteacherWelcome.jobTitle}
+            </span>
           </h2>
         </AnimateIn>
 
@@ -42,37 +49,18 @@ export default function HeadMessage() {
 
             <div className="text-center text-pretty flex-1/2">
               <AnimateIn>
-                <p>
-                  I am excited to welcome you to Sapperton C of E Primary
-                  School.
-                </p>
-                <p>
-                  Nestled in the heart of the Cotswolds, our small village
-                  school is a warm and welcoming community. Through a nurturing
-                  environment and rich, varied and creative curriculum, everyone
-                  develops faith in each other and ourselves, and are inspired
-                  to be successful in everything we do. Our local environment
-                  allows us to fully embrace the outdoors and extends our
-                  learning into a wide natural space. Providing children with
-                  experiences away from the classroom, such as through trips
-                  linked to our curricula, residentials, sporting events and
-                  music concerts creates excited and aspirational learners.{" "}
-                </p>
-                <p>
-                  The Christian values of love, honour and trust underpin our
-                  school and enable all of our community to flourish and learn.
-                  Together, we cultivate a spirit of kindness, resilience and
-                  ambition that prepares our children for future success.{" "}
-                </p>
-                <p>
-                  We are proud of our school and would welcome you to come and
-                  see just how much Sapperton could offer your child.{" "}
-                </p>
-                <p>
-                  <b>Mrs Meg Crampton</b>
+                {/* convert new lines into br */}
+                <div
+                  className="pb-8"
+                  dangerouslySetInnerHTML={{
+                    __html: headteacherWelcome.body.replace(/\n/g, "<br />"),
+                  }}
+                />
+                <div>
+                  <b>{headteacherWelcome.name}</b>
                   <br />
-                  Head of School
-                </p>
+                  {headteacherWelcome.jobTitle}
+                </div>
               </AnimateIn>
             </div>
           </div>
@@ -81,12 +69,11 @@ export default function HeadMessage() {
               className={`text-sapperton-green text-3xl md:text-5xl text-center ${bodoniModa.className} flex flex-col text-balance max-w-2xl mx-auto -mb-12`}
             >
               <div className="text-7xl relative top-9 text-left">&ldquo;</div>
-              Every child who walks through our doors is known, valued, and
-              encouraged to shine.
+              {headteacherWelcome.quote}
               <div className="text-7xl  text-right">&rdquo;</div>
             </div>
             <div className="text-foreground text-lg text-center">
-              Mrs Meg Crampton
+              {headteacherWelcome.name}
             </div>
           </AnimateIn>
         </div>

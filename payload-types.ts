@@ -104,8 +104,14 @@ export interface Config {
   db: {
     defaultIDType: number;
   };
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'hero-words': HeroWord;
+    'headteacher-welcome': HeadteacherWelcome;
+  };
+  globalsSelect: {
+    'hero-words': HeroWordsSelect<false> | HeroWordsSelect<true>;
+    'headteacher-welcome': HeadteacherWelcomeSelect<false> | HeadteacherWelcomeSelect<true>;
+  };
   locale: null;
   user: User & {
     collection: 'users';
@@ -692,6 +698,63 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "hero-words".
+ */
+export interface HeroWord {
+  id: number;
+  /**
+   * These are the words that are cycled through on the front page hero section.
+   */
+  words: {
+    word: string;
+    id?: string | null;
+  }[];
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "headteacher-welcome".
+ */
+export interface HeadteacherWelcome {
+  id: number;
+  name: string;
+  jobTitle: string;
+  body: string;
+  quote: string;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "hero-words_select".
+ */
+export interface HeroWordsSelect<T extends boolean = true> {
+  words?:
+    | T
+    | {
+        word?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "headteacher-welcome_select".
+ */
+export interface HeadteacherWelcomeSelect<T extends boolean = true> {
+  name?: T;
+  jobTitle?: T;
+  body?: T;
+  quote?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

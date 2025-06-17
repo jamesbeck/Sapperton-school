@@ -1,10 +1,9 @@
-import { getPayload } from "payload";
-import configPromise from "@payload-config";
 import Banner from "@/components/banner";
 import Container from "@/components/container";
 import { notFound } from "next/navigation";
 import { Page, Media } from "@/payload-types";
 import { RichText } from "@payloadcms/richtext-lexical/react";
+import payload from "@/payload";
 
 export default async function ContentPage({
   params,
@@ -15,8 +14,6 @@ export default async function ContentPage({
 
   //final slug
   const finalSlug = slug[slug.length - 1];
-
-  const payload = await getPayload({ config: configPromise });
 
   const menuItems = await payload.find({
     collection: "menuItems",
@@ -52,8 +49,6 @@ export default async function ContentPage({
 }
 
 export const generateStaticParams = async () => {
-  const payload = await getPayload({ config: configPromise });
-
   const menuItems = await payload.find({
     collection: "menuItems",
     depth: 2,
