@@ -1,6 +1,5 @@
 import Hero from "@/components/hero";
 import HeadMessage from "@/components/headMessage";
-import Footer from "@/components/footer";
 import payload from "@/payload";
 
 export default async function Home({}) {
@@ -21,7 +20,6 @@ export default async function Home({}) {
     <div>
       <Hero words={heroWords} />
       <HeadMessage headteacherWelcome={headteacherWelcome} />
-      <Footer />
     </div>
   );
 }

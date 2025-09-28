@@ -12,6 +12,7 @@ import sharp from "sharp";
 import { Users } from "./collections/Users";
 import { Media } from "./collections/Media";
 import { Staff } from "./collections/Staff";
+import { StaffGroups } from "./collections/StaffGroups";
 import { Classes } from "./collections/Classes";
 import { Clubs } from "./collections/Clubs";
 import { Events } from "./collections/Events";
@@ -51,6 +52,7 @@ export default buildConfig({
     MenuItems,
     Pages,
     Staff,
+    StaffGroups,
     Classes,
     Clubs,
     Events,

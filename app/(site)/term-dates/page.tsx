@@ -19,7 +19,7 @@ export default async function TermDates() {
 
   return (
     <div>
-      <Banner title="Term Dates" />
+      <Banner />
       <Container>
         <h1>Term Dates</h1>
         {events.docs.map((event) => (

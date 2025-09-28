@@ -12,6 +12,7 @@ import Link from "next/link";
 import { cn } from "@/utils/cn";
 import { HoverScale } from "@/utils/hoverScale";
 import { GroupedMenuItem } from "@/types";
+import { Class } from "@/payload-types";
 
 const subMenu = [
   {
@@ -110,8 +111,10 @@ const subMenu = [
 
 export default function Header({
   menuItems,
+  classes,
 }: {
   menuItems: GroupedMenuItem[];
+  classes: Class[];
 }) {
   const [open, setOpen] = useState(false);
   const [openSection, setOpenSection] = useState<number | null>(null);
@@ -187,6 +190,32 @@ export default function Header({
                               )}
                             />
                           </div>
+
+                          {/*CLASSES INJECTION */}
+                          {item.title == "Our Classes" && (
+                            <motion.div
+                              className={"text-lg overflow-hidden"}
+                              initial={{ height: 0 }}
+                              animate={{
+                                height: openSection === i ? "auto" : 0,
+                              }}
+                              exit={{ height: 0 }}
+                              transition={{ duration: 0.5 }}
+                            >
+                              <div className="flex flex-col px-4 pb-4">
+                                {classes.map((schoolClass, i) => (
+                                  <Link
+                                    key={i}
+                                    href={`/classes/${schoolClass.slug}`}
+                                    className="hover:underline"
+                                    onClick={() => setOpen(false)}
+                                  >
+                                    <div>{schoolClass.name}</div>
+                                  </Link>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
 
                           {item.children && (
                             <motion.div

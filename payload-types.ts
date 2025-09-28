@@ -70,6 +70,7 @@ export interface Config {
     menuItems: MenuItem;
     pages: Page;
     staff: Staff;
+    staffGroups: StaffGroup;
     classes: Class;
     clubs: Club;
     events: Event;
@@ -90,6 +91,7 @@ export interface Config {
     menuItems: MenuItemsSelect<false> | MenuItemsSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     staff: StaffSelect<false> | StaffSelect<true>;
+    staffGroups: StaffGroupsSelect<false> | StaffGroupsSelect<true>;
     classes: ClassesSelect<false> | ClassesSelect<true>;
     clubs: ClubsSelect<false> | ClubsSelect<true>;
     events: EventsSelect<false> | EventsSelect<true>;
@@ -148,6 +150,8 @@ export interface MenuItem {
   title: string;
   slug?: string | null;
   page?: (number | null) | Page;
+  url?: string | null;
+  order?: number | null;
   parent?: (number | null) | MenuItem;
   breadcrumbs?:
     | {
@@ -183,6 +187,8 @@ export interface Page {
     [k: string]: unknown;
   };
   banner?: (number | null) | Media;
+  galleryImages?: (number | Media)[] | null;
+  files?: (number | Media)[] | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -260,6 +266,8 @@ export interface FolderInterface {
 export interface Staff {
   id: number;
   name: string;
+  staffGroup: (number | StaffGroup)[];
+  slug?: string | null;
   position: string;
   biography: {
     root: {
@@ -282,11 +290,23 @@ export interface Staff {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "staffGroups".
+ */
+export interface StaffGroup {
+  id: number;
+  name: string;
+  order: number;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "classes".
  */
 export interface Class {
   id: number;
   name: string;
+  slug?: string | null;
   years: string;
   description: {
     root: {
@@ -306,6 +326,7 @@ export interface Class {
   banner?: (number | null) | Media;
   primaryTeachers?: (number | Staff)[] | null;
   otherTeachers?: (number | Staff)[] | null;
+  image?: (number | null) | Media;
   updatedAt: string;
   createdAt: string;
 }
@@ -431,6 +452,10 @@ export interface PayloadLockedDocument {
         value: number | Staff;
       } | null)
     | ({
+        relationTo: 'staffGroups';
+        value: number | StaffGroup;
+      } | null)
+    | ({
         relationTo: 'classes';
         value: number | Class;
       } | null)
@@ -508,6 +533,8 @@ export interface MenuItemsSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   page?: T;
+  url?: T;
+  order?: T;
   parent?: T;
   breadcrumbs?:
     | T
@@ -528,6 +555,8 @@ export interface PagesSelect<T extends boolean = true> {
   title?: T;
   body?: T;
   banner?: T;
+  galleryImages?: T;
+  files?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
@@ -538,9 +567,21 @@ export interface PagesSelect<T extends boolean = true> {
  */
 export interface StaffSelect<T extends boolean = true> {
   name?: T;
+  staffGroup?: T;
+  slug?: T;
   position?: T;
   biography?: T;
   image?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "staffGroups_select".
+ */
+export interface StaffGroupsSelect<T extends boolean = true> {
+  name?: T;
+  order?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -550,11 +591,13 @@ export interface StaffSelect<T extends boolean = true> {
  */
 export interface ClassesSelect<T extends boolean = true> {
   name?: T;
+  slug?: T;
   years?: T;
   description?: T;
   banner?: T;
   primaryTeachers?: T;
   otherTeachers?: T;
+  image?: T;
   updatedAt?: T;
   createdAt?: T;
 }

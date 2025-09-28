@@ -19,14 +19,14 @@ export const Events: CollectionConfig = {
     {
       name: "endDate",
       type: "date",
-      required: true,
-      admin: {
-        condition: (data) => {
-          console.log(data);
-          if (data.Type === "other") return true;
-          return false;
-        },
-      },
+      required: false,
+      // admin: {
+      //   condition: (data) => {
+      //     console.log(data);
+      //     if (data.Type === "other") return true;
+      //     return false;
+      //   },
+      // },
       label: "End Date",
     },
     {

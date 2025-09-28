@@ -69,7 +69,6 @@ export default async function ContentPage({
         Preview
       </div>
       <Banner
-        title={page.title || ""}
         url={banner?.url || ""}
         focalX={banner?.focalX || 0}
         focalY={banner?.focalY || 0}

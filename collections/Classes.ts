@@ -1,4 +1,5 @@
 import type { CollectionConfig } from "payload";
+import slugify from "slugify";
 
 export const Classes: CollectionConfig = {
   slug: "classes",
@@ -13,6 +14,25 @@ export const Classes: CollectionConfig = {
       name: "name",
       type: "text",
       required: true,
+    },
+    {
+      name: "slug",
+      type: "text",
+      access: {
+        read: () => true,
+        update: () => false,
+        create: () => false,
+      },
+
+      hooks: {
+        beforeChange: [
+          ({ data }) => {
+            return slugify(data?.name, { lower: true, strict: true });
+          },
+        ],
+      },
+      index: true,
+      label: "Slug",
     },
     {
       name: "years",
@@ -40,6 +60,11 @@ export const Classes: CollectionConfig = {
       type: "relationship",
       relationTo: "staff",
       hasMany: true,
+    },
+    {
+      name: "image",
+      type: "upload",
+      relationTo: "media",
     },
   ],
 };

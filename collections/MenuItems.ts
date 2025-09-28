@@ -49,5 +49,13 @@ export const MenuItems: CollectionConfig = {
       type: "relationship",
       relationTo: "pages",
     },
+    {
+      name: "url",
+      type: "text",
+    },
+    {
+      name: "order",
+      type: "number",
+    },
   ],
 };

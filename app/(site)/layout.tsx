@@ -6,6 +6,7 @@ import { getPayload } from "payload";
 import configPromise from "@payload-config";
 import { GroupedMenuItem } from "@/types";
 import { MenuItem } from "@/payload-types";
+import Footer from "@/components/footer";
 
 const payload = await getPayload({ config: configPromise });
 
@@ -23,7 +24,15 @@ export default async function RootLayout({
     collection: "menuItems",
     depth: 1,
     limit: 1000,
-    sort: ["-parent", "id"],
+    sort: ["-parent", "order", "id"],
+    // id: "507f1f77bcf86cd799439011",
+  });
+
+  const classes = await payload.find({
+    collection: "classes",
+    depth: 1,
+    limit: 1000,
+    sort: ["order", "id"],
     // id: "507f1f77bcf86cd799439011",
   });
 
@@ -57,8 +66,9 @@ export default async function RootLayout({
       <body
         className={`antialiased ${geistSans.variable} ${geistMono.variable}`}
       >
-        <Header menuItems={menuItemsGrouped} />
+        <Header menuItems={menuItemsGrouped} classes={classes.docs || []} />
         {children}
+        <Footer />
       </body>
     </html>
   );
