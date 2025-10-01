@@ -29,8 +29,6 @@ export default async function StaffPage({
   const schoolClass = schoolClasses.docs?.[0];
   const image = schoolClass?.image as Media;
 
-  console.log(schoolClass);
-
   return (
     <div>
       <Banner

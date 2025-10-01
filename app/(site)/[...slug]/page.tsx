@@ -116,6 +116,7 @@ export const generateStaticParams = async () => {
     limit: 1000,
     where: {
       parent: { exists: true },
+      url: { exists: false },
     },
   });
 
