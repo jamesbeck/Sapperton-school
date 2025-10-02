@@ -20,14 +20,19 @@ export const Media: CollectionConfig = {
   upload: {
     imageSizes: [
       {
-        name: "large",
-        width: 1920,
-        height: 1080,
+        name: "thumbnail",
+        width: 200,
+        height: 200,
       },
       {
         name: "small",
         width: 800,
         height: 450,
+      },
+      {
+        name: "large",
+        width: 1920,
+        height: 1080,
       },
     ],
   },

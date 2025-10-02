@@ -7,6 +7,7 @@ import H2 from "@/components/ui/h2";
 import { RichText } from "@payloadcms/richtext-lexical/react";
 import ClassCard from "@/components/classCard";
 import H1 from "@/components/ui/h1";
+import Image from "next/image"
 
 export default async function StaffPage({
   params,
@@ -15,7 +16,7 @@ export default async function StaffPage({
 }) {
   const { slug } = await params;
 
-  const staff = await payload.find({
+  const staffResults = await payload.find({
     collection: "staff",
     depth: 2,
     limit: 1,
@@ -26,7 +27,8 @@ export default async function StaffPage({
     },
   });
 
-  const image = staff.docs?.[0].image as Media;
+  const staff = staffResults.docs[0]
+  const image = staff.image as Media;
 
   const classesTaught = await payload.find({
     collection: "classes",
@@ -34,7 +36,7 @@ export default async function StaffPage({
     limit: 2,
     where: {
       primaryTeachers: {
-        equals: staff.docs?.[0].id,
+        equals: staff.id,
       },
     },
   });
@@ -45,7 +47,7 @@ export default async function StaffPage({
     limit: 2,
     where: {
       otherTeachers: {
-        equals: staff.docs?.[0].id,
+        equals: staff.id,
       },
     },
   });
@@ -53,31 +55,36 @@ export default async function StaffPage({
   return (
     <div>
       <Banner
-        url={image?.url || ""}
-        focalX={image?.focalX || 50}
-        focalY={image?.focalY || 30}
+        url={"/hero/1.png"}
+        focalX={50}
+        focalY={30}
       />
 
       <Breadcrumbs
         crumbs={[
           { label: "Staff", url: "/our-school/staff" },
-          { label: staff.docs?.[0].name, url: `/our-school/staff/${slug}` },
+          { label: staff.name, url: `/our-school/staff/${slug}` },
         ]}
       />
 
       <Container>
         <div className="flex flex-col gap-8 items-center">
-          <H1>{staff.docs?.[0].name}</H1>
-          {classesTaught.docs?.length > 0 && (
-            <>
-              <H2>Classes Taught</H2>
-              <div className="flex gap-8 justify-center">
-                {classesTaught.docs?.map((taughtClass) => (
-                  <ClassCard schoolClass={taughtClass} key={taughtClass.id} />
-                ))}
-              </div>
-            </>
-          )}
+          <H1>{staff.name}</H1>
+          <div className="relative w-48 h-48 rounded-full overflow-hidden">
+            {!!image?.url && (
+              <Image
+                src={image?.url || ""}
+                alt={staff.name || ""}
+                fill
+                style={{
+                  objectFit: "cover",
+                  objectPosition: `${image?.focalX}% ${image?.focalY}%`,
+                }}
+              />
+            )}
+          </div>
+          <RichText data={staff.biography} className="page-content" />
+          
 
           {classesAssisted.docs?.length > 0 && (
             <>
@@ -90,11 +97,31 @@ export default async function StaffPage({
             </>
           )}
 
-          <H2>Biography</H2>
-          <RichText data={staff.docs?.[0].biography} className="text-center" />
-
-          <H2>News Articles</H2>
         </div>
+      </Container>
+
+      <Container colour="green">
+        {classesTaught.docs?.length > 0 && (
+            <div className="flex flex-col gap-8">
+              <H2>Classes Taught</H2>
+              <div className="flex gap-8 justify-center">
+                {classesTaught.docs?.map((taughtClass) => (
+                  <ClassCard schoolClass={taughtClass} key={taughtClass.id} />
+                ))}
+              </div>
+            </div>
+          )}
+      </Container>
+
+      <Container>
+        {/* {classesTaught.docs?.length > 0 && ( */}
+            <div className="flex flex-col gap-8">
+              <H2>News Articles</H2>
+              <div className="flex gap-8 justify-center">
+                Coming soon!
+              </div>
+            </div>
+          {/* )} */}
       </Container>
     </div>
   );
