@@ -38,7 +38,7 @@ export default function OpenDays({ openDays }: { openDays: Event[] }) {
               Come and Visit Us
             </h2>
             <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto text-balance">
-              We'd love to welcome you to Sapperton School. Join us for an Open
+              We&apos;d love to welcome you to Sapperton School. Join us for an Open
               Day to see our wonderful school in action, meet our staff and
               students, and discover what makes our community special.
             </p>
@@ -78,8 +78,8 @@ export default function OpenDays({ openDays }: { openDays: Event[] }) {
               Book Your Visit or Just Turn Up
             </h3>
             <p className="text-lg mb-6 text-white/90">
-              No appointment necessary - feel free to drop in! Or if you'd
-              prefer to let us know you're coming, get in touch:
+              No appointment necessary - feel free to drop in! Or if you&apos;d
+              prefer to let us know you&apos;re coming, get in touch:
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <a
