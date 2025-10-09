@@ -6,6 +6,7 @@ import Breadcrumbs from "@/components/breadcrumbs";
 import H2 from "@/components/ui/h2";
 import { RichText } from "@payloadcms/richtext-lexical/react";
 import ClassCard from "@/components/classCard";
+import NewsCard from "@/components/newsCard";
 import H1 from "@/components/ui/h1";
 import Image from "next/image"
 
@@ -47,6 +48,19 @@ export default async function StaffPage({
     limit: 2,
     where: {
       otherTeachers: {
+        equals: staff.id,
+      },
+    },
+  });
+
+  // Fetch news articles by this author
+  const newsArticles = await payload.find({
+    collection: "newsArticles",
+    depth: 2,
+    limit: 6,
+    sort: "-date",
+    where: {
+      author: {
         equals: staff.id,
       },
     },
@@ -114,14 +128,20 @@ export default async function StaffPage({
       </Container>
 
       <Container>
-        {/* {classesTaught.docs?.length > 0 && ( */}
-            <div className="flex flex-col gap-8">
-              <H2>News Articles</H2>
-              <div className="flex gap-8 justify-center">
-                Coming soon!
-              </div>
+        <div className="flex flex-col gap-8">
+          <H2>News Articles</H2>
+          {newsArticles.docs.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {newsArticles.docs.map((article) => (
+                <NewsCard key={article.id} article={article} />
+              ))}
             </div>
-          {/* )} */}
+          ) : (
+            <p className="text-center text-gray-600">
+              No news articles by this author yet.
+            </p>
+          )}
+        </div>
       </Container>
     </div>
   );

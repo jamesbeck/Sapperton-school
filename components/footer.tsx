@@ -47,8 +47,8 @@ export default function Footer() {
               <Link href="/contact-us" className="hover:text-white hover:underline transition-colors">
                 Contact Us
               </Link>
-              <Link href="/#head-message" className="hover:text-white hover:underline transition-colors">
-                Headteacher Welcome
+              <Link href="/news" className="hover:text-white hover:underline transition-colors">
+                News
               </Link>
               <Link href="/our-school" className="hover:text-white hover:underline transition-colors">
                 Our School

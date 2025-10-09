@@ -335,6 +335,8 @@ export interface Class {
   primaryTeachers?: (number | Staff)[] | null;
   otherTeachers?: (number | Staff)[] | null;
   image?: (number | null) | Media;
+  galleryImages?: (number | Media)[] | null;
+  files?: (number | Media)[] | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -401,7 +403,9 @@ export interface Event {
 export interface NewsArticle {
   id: number;
   headline: string;
+  slug?: string | null;
   date: string;
+  author?: (number | null) | Staff;
   body: {
     root: {
       type: string;
@@ -606,6 +610,8 @@ export interface ClassesSelect<T extends boolean = true> {
   primaryTeachers?: T;
   otherTeachers?: T;
   image?: T;
+  galleryImages?: T;
+  files?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -641,7 +647,9 @@ export interface EventsSelect<T extends boolean = true> {
  */
 export interface NewsArticlesSelect<T extends boolean = true> {
   headline?: T;
+  slug?: T;
   date?: T;
+  author?: T;
   body?: T;
   banner?: T;
   gallery?: T;

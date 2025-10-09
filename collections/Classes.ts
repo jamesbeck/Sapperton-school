@@ -66,5 +66,17 @@ export const Classes: CollectionConfig = {
       type: "upload",
       relationTo: "media",
     },
+    {
+      name: "galleryImages",
+      type: "upload",
+      relationTo: "media",
+      hasMany: true,
+    },
+    {
+      name: "files",
+      type: "upload",
+      relationTo: "media",
+      hasMany: true,
+    },
   ],
 };

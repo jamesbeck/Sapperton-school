@@ -42,7 +42,7 @@ export default async function RootLayout({
         acc.push({
           id: item.id,
           title: item.title,
-          href: item.breadcrumbs?.[item.breadcrumbs.length - 1].url || "",
+          href: item.url||item.breadcrumbs?.[item.breadcrumbs.length - 1].url || "",
           children: [],
         });
       } else {
@@ -51,7 +51,7 @@ export default async function RootLayout({
           parent.children.push({
             id: item.id,
             title: item.title,
-            href: item.breadcrumbs?.[item.breadcrumbs.length - 1].url || "",
+            href: item.url||item.breadcrumbs?.[item.breadcrumbs.length - 1].url || "",
             children: [],
           });
         }

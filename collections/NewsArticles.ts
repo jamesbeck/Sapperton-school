@@ -1,4 +1,5 @@
 import type { CollectionConfig } from "payload";
+import slugify from "slugify";
 
 export const NewsArticles: CollectionConfig = {
   slug: "newsArticles",
@@ -15,9 +16,33 @@ export const NewsArticles: CollectionConfig = {
       required: true,
     },
     {
+      name: "slug",
+      type: "text",
+      access: {
+        read: () => true,
+        update: () => false,
+        create: () => false,
+      },
+      hooks: {
+        beforeChange: [
+          ({ data }) => {
+            return slugify(data?.headline, { lower: true, strict: true });
+          },
+        ],
+      },
+      index: true,
+      label: "Slug",
+    },
+    {
       name: "date",
       type: "date",
       required: true,
+    },
+    {
+      name: "author",
+      type: "relationship",
+      relationTo: "staff",
+      required: false,
     },
     {
       name: "body",
