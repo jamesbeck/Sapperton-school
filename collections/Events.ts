@@ -14,20 +14,43 @@ export const Events: CollectionConfig = {
     {
       name: "date",
       type: "date",
+      label: "Start Date",
       required: true,
+      admin: {
+        date: {
+          displayFormat: "dd/MM/yyyy",
+        },
+      },
+    },
+    {
+      name: "startTime",
+      type: "text",
+      required: false,
+      label: "Start Time",
+      admin: {
+        description: "e.g., 09:00 or 2:30 PM",
+      },
     },
     {
       name: "endDate",
       type: "date",
       required: false,
-      // admin: {
-      //   condition: (data) => {
-      //     console.log(data);
-      //     if (data.Type === "other") return true;
-      //     return false;
-      //   },
-      // },
       label: "End Date",
+      admin: {
+        date: {
+          displayFormat: "dd/MM/yyyy",
+        },
+      },
+    },
+
+    {
+      name: "endTime",
+      type: "text",
+      required: false,
+      label: "End Time",
+      admin: {
+        description: "e.g., 15:30 or 3:30 PM",
+      },
     },
     {
       name: "type",
@@ -36,6 +59,10 @@ export const Events: CollectionConfig = {
         {
           label: "Term Date",
           value: "term-date",
+        },
+        {
+          label: "Event",
+          value: "event",
         },
         {
           label: "Open Day",
@@ -47,6 +74,12 @@ export const Events: CollectionConfig = {
         },
       ],
       required: true,
+    },
+    {
+      name: "classes",
+      type: "relationship",
+      relationTo: "classes",
+      hasMany: true,
     },
     {
       name: "description",

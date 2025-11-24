@@ -310,13 +310,14 @@ function LogoAndMenuButton({
       <div className="w-full mx-auto max-w-7xl relative h-auto py-4">
         <AnimatePresence>
           <motion.div style={{ opacity: logoOpacity }}>
-            <Link href="/">
+            <Link href="/" className="block select-none" draggable="false">
               <Image
                 src="/logo.png"
                 alt="Logo"
                 width={400}
                 height={120}
-                className="w-auto h-16 md:h-24"
+                className="w-auto h-16 md:h-24 pointer-events-none"
+                draggable="false"
               />
             </Link>
           </motion.div>

@@ -6,6 +6,7 @@ import H2 from "@/components/ui/h2";
 import { Staff, Media } from "@/payload-types";
 import StaffCard from "@/components/staffCard";
 import NewsCard from "@/components/newsCard";
+import ClassEvents from "@/components/classEvents";
 import { RichText } from "@payloadcms/richtext-lexical/react";
 import H1 from "@/components/ui/h1";
 import Link from "next/link";
@@ -95,6 +96,28 @@ export default async function StaffPage({
     },
   });
 
+  // Fetch upcoming events for this class
+  const classEvents = await payload.find({
+    collection: "events",
+    depth: 2,
+    limit: 10,
+    sort: "date",
+    where: {
+      and: [
+        {
+          classes: {
+            equals: schoolClass.id,
+          },
+        },
+        {
+          date: {
+            greater_than_equal: new Date().toISOString(),
+          },
+        },
+      ],
+    },
+  });
+
   const allTeachers = [
     ...(schoolClass?.primaryTeachers || []),
     ...(schoolClass?.otherTeachers || []),
@@ -131,8 +154,8 @@ export default async function StaffPage({
         <div className="flex flex-col gap-8 items-center">
           {!!schoolClass.primaryTeachers?.length && (
             <>
-              <H2>Class Teachers</H2>
-              <div className="flex flex-wrap gap-12">
+              <H2>{schoolClass.name} Team</H2>
+              <div className="flex flex-wrap justify-center gap-12">
                 {allTeachers?.map((staff, i) => (
                   <StaffCard staff={staff as Staff} key={i} />
                 ))}
@@ -145,15 +168,28 @@ export default async function StaffPage({
       <Container>
         <div className="flex flex-col gap-8 items-center">
           <div className="flex flex-col gap-8">
+            <H2>Upcoming Events</H2>
+            <ClassEvents events={classEvents.docs} />
+          </div>
+        </div>
+      </Container>
+
+      <Container colour="green">
+        <div className="flex flex-col gap-8 items-center">
+          <div className="flex flex-col gap-8">
             <H2>News Articles</H2>
             {newsArticles.docs.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {newsArticles.docs.map((article) => (
-                  <NewsCard key={article.id} article={article} />
+                  <NewsCard
+                    key={article.id}
+                    article={article}
+                    bgColor="green"
+                  />
                 ))}
               </div>
             ) : (
-              <p className="text-center text-gray-600">
+              <p className="text-center text-white/90">
                 No news articles for this class yet.
               </p>
             )}
@@ -162,7 +198,7 @@ export default async function StaffPage({
       </Container>
 
       {galleryImages?.length > 0 && (
-        <Container colour="green">
+        <Container>
           <div className="flex flex-col gap-8">
             <H2>Gallery</H2>
             <ImageGallery images={galleryImages || []} />

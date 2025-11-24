@@ -33,7 +33,11 @@ export default function ImageGalleryComponent({
 
 `}
       </style>
-      <ImageGallery items={images} showPlayButton={false} />
+      <ImageGallery
+        items={images}
+        showPlayButton={false}
+        preventDefaultTouchmoveEvent={false}
+      />
     </>
   );
 }

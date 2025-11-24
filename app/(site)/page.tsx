@@ -1,6 +1,7 @@
 import Hero from "@/components/hero";
 import HeadMessage from "@/components/headMessage";
 import OpenDays from "@/components/openDays";
+import LatestNews from "@/components/latestNews";
 import payload from "@/payload";
 
 export default async function Home({}) {
@@ -30,10 +31,19 @@ export default async function Home({}) {
     limit: 10,
   });
 
+  // Fetch latest news articles
+  const latestNews = await payload.find({
+    collection: "newsArticles",
+    sort: "-date",
+    limit: 3,
+    depth: 2,
+  });
+
   return (
     <div>
       <Hero words={heroWords} />
       <HeadMessage headteacherWelcome={headteacherWelcome} />
+      <LatestNews newsArticles={latestNews.docs} />
       <OpenDays openDays={openDaysResult.docs} />
     </div>
   );

@@ -376,8 +376,17 @@ export interface Event {
   id: number;
   name: string;
   date: string;
+  /**
+   * e.g., 09:00 or 2:30 PM
+   */
+  startTime?: string | null;
   endDate?: string | null;
-  type: 'term-date' | 'open-day' | 'other';
+  /**
+   * e.g., 15:30 or 3:30 PM
+   */
+  endTime?: string | null;
+  type: 'term-date' | 'event' | 'open-day' | 'other';
+  classes?: (number | Class)[] | null;
   description: {
     root: {
       type: string;
@@ -635,8 +644,11 @@ export interface ClubsSelect<T extends boolean = true> {
 export interface EventsSelect<T extends boolean = true> {
   name?: T;
   date?: T;
+  startTime?: T;
   endDate?: T;
+  endTime?: T;
   type?: T;
+  classes?: T;
   description?: T;
   updatedAt?: T;
   createdAt?: T;
