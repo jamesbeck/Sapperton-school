@@ -24,7 +24,8 @@ export async function sendContactEmail(
       console.error("SendGrid API key is not configured");
       return {
         success: false,
-        message: "Email service is not configured. Please contact the administrator.",
+        message:
+          "Email service is not configured. Please contact the administrator.",
       };
     }
 
@@ -50,7 +51,7 @@ export async function sendContactEmail(
 
     // Prepare email content
     const msg = {
-      to: "james@jamesbeck.co.uk",
+      to: "admin@sapperton.gloucs.sch.uk",
       from: "sappertonwebsite@jamesbeck.co.uk",
       subject: "Website enquiry",
       text: `
@@ -117,7 +118,8 @@ ${data.message}
     console.error("Error sending email:", error);
     return {
       success: false,
-      message: "Failed to send message. Please try again later or contact us directly.",
+      message:
+        "Failed to send message. Please try again later or contact us directly.",
     };
   }
 }

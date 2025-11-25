@@ -80,6 +80,10 @@ export const Events: CollectionConfig = {
       type: "relationship",
       relationTo: "classes",
       hasMany: true,
+      admin: {
+        description:
+          "Only add classes if this event is specific to certain classes. Leave empty for whole-school events.",
+      },
     },
     {
       name: "description",

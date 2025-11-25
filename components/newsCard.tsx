@@ -1,7 +1,7 @@
 "use client";
 import { HoverScale } from "@/utils/hoverScale";
 import Image from "next/image";
-import { NewsArticle, Media, Staff } from "@/payload-types";
+import { NewsArticle, Media, Staff, Class } from "@/payload-types";
 import Link from "next/link";
 
 export default function NewsCard({
@@ -13,7 +13,6 @@ export default function NewsCard({
 }) {
   const banner = article.banner as Media;
   const author = article.author as Staff;
-  const isGreen = bgColor === "green";
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -27,7 +26,7 @@ export default function NewsCard({
   return (
     <Link href={`/news/${article.slug}`}>
       <HoverScale>
-        <div className="flex flex-col gap-4 group">
+        <div className="flex flex-col gap-4 group bg-white rounded-lg p-4 border border-gray-200 shadow-md hover:shadow-lg transition-shadow">
           <div className="aspect-video w-full overflow-hidden rounded-lg bg-gray-200">
             {banner?.url ? (
               <Image
@@ -60,21 +59,46 @@ export default function NewsCard({
             )}
           </div>
           <div className="flex flex-col gap-2">
-            <h3
-              className={`text-xl font-bold group-hover:underline line-clamp-2 ${
-                isGreen ? "text-white" : "text-gray-900"
-              }`}
-            >
+            <h3 className="text-xl font-bold group-hover:underline line-clamp-2 text-gray-900">
               {article.headline}
             </h3>
-            <div
-              className={`flex flex-col gap-1 text-sm ${
-                isGreen ? "text-white/90" : "text-gray-600"
-              }`}
-            >
+            <div className="flex flex-col gap-1 text-sm text-gray-600">
               <p>{formatDate(article.date)}</p>
-              {author && <p className="font-medium">By {author.name}</p>}
+              {author && (
+                <div className="flex items-center gap-2">
+                  {(author.image as Media)?.url && (
+                    <div className="relative w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                      <Image
+                        src={(author.image as Media).url || ""}
+                        alt={author.name || ""}
+                        fill
+                        className="object-cover"
+                        style={{
+                          objectPosition: `${(author.image as Media).focalX}% ${(author.image as Media).focalY}%`,
+                        }}
+                      />
+                    </div>
+                  )}
+                  <p className="font-medium">By {author.name}</p>
+                </div>
+              )}
             </div>
+            {article.classes && article.classes.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {article.classes.map((classItem) => {
+                  const classData =
+                    typeof classItem === "object" ? (classItem as Class) : null;
+                  return classData ? (
+                    <span
+                      key={classData.id}
+                      className="text-xs font-semibold px-2 py-1 bg-sapperton-green text-white rounded"
+                    >
+                      {classData.name}
+                    </span>
+                  ) : null;
+                })}
+              </div>
+            )}
           </div>
         </div>
       </HoverScale>

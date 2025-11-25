@@ -1,7 +1,7 @@
 import Banner from "@/components/banner";
 import Container from "@/components/container";
 import { notFound } from "next/navigation";
-import { Media, Staff } from "@/payload-types";
+import { Media, Staff, Class } from "@/payload-types";
 import { RichText } from "@payloadcms/richtext-lexical/react";
 import payload from "@/payload";
 import H1 from "@/components/ui/h1";
@@ -9,6 +9,8 @@ import Breadcrumbs from "@/components/breadcrumbs";
 import H2 from "@/components/ui/h2";
 import ImageGallery from "@/components/imageGallery";
 import StaffCard from "@/components/staffCard";
+import ClassCard from "@/components/classCard";
+import NewsCard from "@/components/newsCard";
 
 export default async function NewsArticlePage({
   params,
@@ -34,6 +36,19 @@ export default async function NewsArticlePage({
   const article = articles.docs[0];
   const banner = article.banner as Media;
   const author = article.author as Staff;
+
+  // Fetch 3 other recent articles
+  const otherArticles = await payload.find({
+    collection: "newsArticles",
+    where: {
+      id: {
+        not_equals: article.id,
+      },
+    },
+    sort: "-date",
+    limit: 3,
+    depth: 2,
+  });
 
   const galleryImages = article.gallery?.map((image) => {
     const media = image as Media;
@@ -87,6 +102,52 @@ export default async function NewsArticlePage({
           <div className="flex flex-col gap-8">
             <H2>Gallery</H2>
             <ImageGallery images={galleryImages || []} />
+          </div>
+        </Container>
+      )}
+      {article.classes && article.classes.length > 0 && (
+        <Container colour={galleryImages?.length > 0 ? "white" : "green"}>
+          <div className="flex flex-col gap-8">
+            <H2>Related Classes</H2>
+            <div className="flex gap-8 justify-center flex-wrap">
+              {article.classes.map((classItem) => {
+                const classData =
+                  typeof classItem === "object" ? (classItem as Class) : null;
+                return classData ? (
+                  <ClassCard schoolClass={classData} key={classData.id} />
+                ) : null;
+              })}
+            </div>
+          </div>
+        </Container>
+      )}
+      {otherArticles.docs.length > 0 && (
+        <Container
+          colour={
+            galleryImages?.length > 0 && article.classes?.length
+              ? "green"
+              : galleryImages?.length > 0 || article.classes?.length
+                ? "white"
+                : "green"
+          }
+        >
+          <div className="flex flex-col gap-8">
+            <H2>More News</H2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {otherArticles.docs.map((otherArticle) => (
+                <NewsCard
+                  key={otherArticle.id}
+                  article={otherArticle}
+                  bgColor={
+                    galleryImages?.length > 0 && article.classes?.length
+                      ? "green"
+                      : galleryImages?.length > 0 || article.classes?.length
+                        ? "white"
+                        : "green"
+                  }
+                />
+              ))}
+            </div>
           </div>
         </Container>
       )}

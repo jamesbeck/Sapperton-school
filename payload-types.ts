@@ -386,6 +386,9 @@ export interface Event {
    */
   endTime?: string | null;
   type: 'term-date' | 'event' | 'open-day' | 'other';
+  /**
+   * Only add classes if this event is specific to certain classes. Leave empty for whole-school events.
+   */
   classes?: (number | Class)[] | null;
   description: {
     root: {

@@ -38,8 +38,8 @@ export default function OpenDays({ openDays }: { openDays: Event[] }) {
               Come and Visit Us
             </h2>
             <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto text-balance">
-              We&apos;d love to welcome you to Sapperton School. Join us for an Open
-              Day to see our wonderful school in action, meet our staff and
+              We&apos;d love to welcome you to Sapperton School. Join us for an
+              Open Day to see our wonderful school in action, meet our staff and
               students, and discover what makes our community special.
             </p>
           </div>
@@ -57,11 +57,6 @@ export default function OpenDays({ openDays }: { openDays: Event[] }) {
                   <div>
                     <h3 className="text-2xl font-bold mb-1">{event.name}</h3>
                     <p className="text-lg">{formatDate(event.date)}</p>
-                    {event.endDate && (
-                      <p className="text-sm text-sapperton-green/70">
-                        Until {formatDate(event.endDate)}
-                      </p>
-                    )}
                   </div>
                 </div>
                 <div className="text-sapperton-green/80 prose prose-sm max-w-none">

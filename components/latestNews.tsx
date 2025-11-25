@@ -11,7 +11,7 @@ export default function LatestNews({
   newsArticles: NewsArticle[];
 }) {
   return (
-    <Container colour="green">
+    <Container colour="white">
       <AnimateIn>
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-4xl font-bold text-white">Latest News</h2>

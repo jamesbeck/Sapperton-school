@@ -1,6 +1,6 @@
 "use client";
 import { HoverScale } from "@/utils/hoverScale";
-import { Event } from "@/payload-types";
+import { Event, Class } from "@/payload-types";
 import Link from "next/link";
 import { Calendar, Clock } from "lucide-react";
 
@@ -127,7 +127,7 @@ export default function EventCard({ event }: { event: Event }) {
           {/* Event details */}
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2 mb-2">
-              <h3 className="text-lg font-bold group-hover:underline line-clamp-2">
+              <h3 className="text-lg font-bold group-hover:underline line-clamp-2 text-gray-900">
                 {event.name}
               </h3>
               <span
@@ -151,6 +151,23 @@ export default function EventCard({ event }: { event: Event }) {
                 </div>
               )}
             </div>
+
+            {event.classes && event.classes.length > 0 && (
+              <div className="flex flex-wrap gap-1 mb-2">
+                {event.classes.map((classItem) => {
+                  const classData =
+                    typeof classItem === "object" ? (classItem as Class) : null;
+                  return classData ? (
+                    <span
+                      key={classData.id}
+                      className="text-xs font-semibold px-2 py-1 bg-sapperton-green text-white rounded"
+                    >
+                      {classData.name}
+                    </span>
+                  ) : null;
+                })}
+              </div>
+            )}
 
             <p className="text-sm text-gray-700 line-clamp-2">
               {getDescriptionText()}
