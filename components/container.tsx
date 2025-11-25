@@ -3,9 +3,11 @@ import { cn } from "@/utils/cn";
 export default function Container({
   children,
   colour = "transparent",
+  id,
 }: {
   children: React.ReactNode;
   colour?: "transparent" | "white" | "green";
+  id?: string;
 }) {
   let colourClass = "";
   if (colour === "white") {
@@ -17,7 +19,7 @@ export default function Container({
   }
 
   return (
-    <div className={cn("w-full", colourClass)}>
+    <div className={cn("w-full", colourClass)} id={id}>
       <div
         className={cn("max-w-7xl mx-auto py-16 md:py-16 w-full px-8 md:px-16")}
       >

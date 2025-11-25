@@ -8,49 +8,9 @@ import H1 from "@/components/ui/h1";
 import Breadcrumbs from "@/components/breadcrumbs";
 import H2 from "@/components/ui/h2";
 import ImageGallery from "@/components/imageGallery";
-import {
-  FileIcon,
-  FileTextIcon,
-  FileSpreadsheetIcon,
-  ImageIcon,
-  VideoIcon,
-  MusicIcon,
-} from "lucide-react";
 import Link from "next/link";
-
-function getFileIcon(filename: string) {
-  const ext = filename.split(".").pop()?.toLowerCase();
-
-  switch (ext) {
-    case "pdf":
-      return FileTextIcon;
-    case "doc":
-    case "docx":
-      return FileTextIcon;
-    case "xls":
-    case "xlsx":
-    case "csv":
-      return FileSpreadsheetIcon;
-    case "jpg":
-    case "jpeg":
-    case "png":
-    case "gif":
-    case "webp":
-    case "svg":
-      return ImageIcon;
-    case "mp4":
-    case "mov":
-    case "avi":
-    case "webm":
-      return VideoIcon;
-    case "mp3":
-    case "wav":
-    case "ogg":
-      return MusicIcon;
-    default:
-      return FileIcon;
-  }
-}
+import { FileIcon, defaultStyles } from "react-file-icon";
+import { ImageIcon } from "lucide-react";
 
 export default async function ContentPage({
   params,
@@ -153,32 +113,39 @@ export default async function ContentPage({
         <Container>
           <div className="flex flex-col gap-8">
             <H2>File Downloads</H2>
-            <div className="flex flex-col gap-4 max-w-lg mx-auto">
+            <div className="flex flex-col gap-3 max-w-3xl mx-auto">
               {page.files?.map((file) => {
                 const media = file as Media;
-                const Icon = getFileIcon(media.filename || "");
+                const extension =
+                  media.filename?.split(".").pop()?.toLowerCase() || "";
                 return (
-                  <div key={media.id} className="flex gap-4">
-                    <Link href={media.url || ""} key={media.id} target="_blank">
-                      <Icon className="w-12 h-12" />
-                    </Link>
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-2">
-                        <Link
-                          href={media.url || ""}
-                          key={media.id}
-                          target="_blank"
-                          className="flex items-center gap-2 hover:underline font-bold"
-                        >
-                          <span>{media.filename}</span>
-                        </Link>
-                        <span className="text-xs">
-                          ({Math.round((media.filesize || 0) / 1024)} KB)
-                        </span>
-                      </div>
-                      <span>{media.alt}</span>
+                  <Link
+                    key={media.id}
+                    href={media.url || ""}
+                    target="_blank"
+                    className="group flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-all hover:border-sapperton-green"
+                  >
+                    <div className="flex-shrink-0 w-12 h-12">
+                      <FileIcon
+                        extension={extension}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        {...(defaultStyles as any)[extension]}
+                      />
                     </div>
-                  </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-gray-900 group-hover:text-sapperton-green transition-colors truncate">
+                        {media.filename}
+                      </div>
+                      {media.alt && (
+                        <div className="text-sm text-gray-600 line-clamp-1">
+                          {media.alt}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-shrink-0 text-xs text-gray-500 font-medium bg-gray-100 px-3 py-1 rounded-full">
+                      {Math.round((media.filesize || 0) / 1024)} KB
+                    </div>
+                  </Link>
                 );
               })}
             </div>

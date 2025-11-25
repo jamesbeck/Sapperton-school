@@ -16,7 +16,9 @@ export default function Footer() {
               <div className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 mt-0.5 flex-shrink-0" />
                 <div>
-                  <div className="font-semibold">Sapperton C of E Primary School</div>
+                  <div className="font-semibold">
+                    Sapperton C of E Primary School
+                  </div>
                   <div>Sapperton</div>
                   <div>Cirencester</div>
                   <div>Gloucestershire</div>
@@ -44,14 +46,35 @@ export default function Footer() {
           <div className="flex flex-col gap-4">
             <h3 className="text-xl font-bold mb-2">Quick Links</h3>
             <div className="flex flex-col gap-2 text-white/90">
-              <Link href="/contact-us" className="hover:text-white hover:underline transition-colors">
+              <Link
+                href="/contact-us"
+                className="hover:text-white hover:underline transition-colors"
+              >
                 Contact Us
               </Link>
-              <Link href="/news" className="hover:text-white hover:underline transition-colors">
+              <Link
+                href="/news"
+                className="hover:text-white hover:underline transition-colors"
+              >
                 News
               </Link>
-              <Link href="/our-school" className="hover:text-white hover:underline transition-colors">
-                Our School
+              <Link
+                href="/events"
+                className="hover:text-white hover:underline transition-colors"
+              >
+                Events
+              </Link>
+              <Link
+                href="/classes"
+                className="hover:text-white hover:underline transition-colors"
+              >
+                Classes
+              </Link>
+              <Link
+                href="/about-us"
+                className="hover:text-white hover:underline transition-colors"
+              >
+                About Us
               </Link>
             </div>
           </div>
@@ -84,7 +107,10 @@ export default function Footer() {
 
         {/* Copyright */}
         <div className="mt-12 pt-8 border-t border-white/20 text-center text-white/80 text-sm">
-          <p>© {currentYear} Sapperton C of E Primary School. All rights reserved.</p>
+          <p>
+            © {currentYear} Sapperton C of E Primary School. All rights
+            reserved.
+          </p>
         </div>
       </Container>
     </div>

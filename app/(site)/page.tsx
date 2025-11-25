@@ -59,7 +59,7 @@ export default async function Home({}) {
 
   return (
     <div>
-      <Hero words={heroWords} />
+      <Hero words={heroWords} openDays={openDaysResult.docs} />
       <HeadMessage headteacherWelcome={headteacherWelcome} />
       <VideoSection />
       <LatestNews newsArticles={latestNews.docs} />

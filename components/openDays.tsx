@@ -28,7 +28,7 @@ export default function OpenDays({ openDays }: { openDays: Event[] }) {
   };
 
   return (
-    <Container colour="green">
+    <Container colour="green" id="open-days">
       <div className="flex flex-col gap-12">
         <AnimateIn>
           <div className="text-center">
