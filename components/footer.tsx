@@ -1,5 +1,6 @@
 import Container from "./container";
 import Link from "next/link";
+import Image from "next/image";
 import { Phone, Mail, MapPin, Instagram, Facebook } from "lucide-react";
 
 export default function Footer() {
@@ -73,7 +74,7 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Social Media */}
+          {/* Social Media & Ofsted */}
           <div className="flex flex-col gap-4">
             <h3 className="text-xl font-bold mb-2">Follow Us</h3>
             <div className="flex gap-4">
@@ -94,6 +95,25 @@ export default function Footer() {
                 aria-label="Follow us on Facebook"
               >
                 <Facebook className="w-6 h-6" />
+              </Link>
+            </div>
+
+            {/* Ofsted Report Link */}
+            <div className="mt-4">
+              <Link
+                href="https://reports.ofsted.gov.uk/provider/21/115698"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block bg-white p-3 rounded-lg transition-opacity hover:opacity-80"
+                aria-label="View our Ofsted report"
+              >
+                <Image
+                  src="/ofsted.png"
+                  alt="Ofsted"
+                  width={100}
+                  height={100}
+                  className="w-20 h-auto sm:w-24"
+                />
               </Link>
             </div>
           </div>
