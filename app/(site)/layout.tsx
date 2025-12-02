@@ -5,7 +5,7 @@ import Header from "@/components/header";
 import { getPayload } from "payload";
 import configPromise from "@payload-config";
 import { GroupedMenuItem } from "@/types";
-import { MenuItem } from "@/payload-types";
+import { MenuItem, FooterMenuItem } from "@/payload-types";
 import Footer from "@/components/footer";
 
 const payload = await getPayload({ config: configPromise });
@@ -36,13 +36,23 @@ export default async function RootLayout({
     // id: "507f1f77bcf86cd799439011",
   });
 
+  const footerMenuItems = await payload.find({
+    collection: "footerMenuItems",
+    depth: 1,
+    limit: 1000,
+    sort: ["-parent", "order", "id"],
+  });
+
   const menuItemsGrouped: GroupedMenuItem[] = menuItems.docs.reduce(
     (acc, item) => {
       if (!item.parent) {
         acc.push({
           id: item.id,
           title: item.title,
-          href: item.url||item.breadcrumbs?.[item.breadcrumbs.length - 1].url || "",
+          href:
+            item.url ||
+            item.breadcrumbs?.[item.breadcrumbs.length - 1].url ||
+            "",
           children: [],
         });
       } else {
@@ -51,7 +61,43 @@ export default async function RootLayout({
           parent.children.push({
             id: item.id,
             title: item.title,
-            href: item.url||item.breadcrumbs?.[item.breadcrumbs.length - 1].url || "",
+            href:
+              item.url ||
+              item.breadcrumbs?.[item.breadcrumbs.length - 1].url ||
+              "",
+            children: [],
+          });
+        }
+      }
+      return acc;
+    },
+    [] as GroupedMenuItem[]
+  );
+
+  const footerMenuItemsGrouped: GroupedMenuItem[] = footerMenuItems.docs.reduce(
+    (acc, item) => {
+      if (!item.parent) {
+        acc.push({
+          id: item.id,
+          title: item.title,
+          href:
+            item.url ||
+            item.breadcrumbs?.[item.breadcrumbs.length - 1].url ||
+            "",
+          children: [],
+        });
+      } else {
+        const parent = acc.find(
+          (i) => i.id === (item.parent as FooterMenuItem)?.id
+        );
+        if (parent) {
+          parent.children.push({
+            id: item.id,
+            title: item.title,
+            href:
+              item.url ||
+              item.breadcrumbs?.[item.breadcrumbs.length - 1].url ||
+              "",
             children: [],
           });
         }
@@ -66,7 +112,11 @@ export default async function RootLayout({
       <body
         className={`antialiased ${geistSans.variable} ${geistMono.variable}`}
       >
-        <Header menuItems={menuItemsGrouped} classes={classes.docs || []} />
+        <Header
+          menuItems={menuItemsGrouped}
+          footerMenuItems={footerMenuItemsGrouped}
+          classes={classes.docs || []}
+        />
         {children}
         <Footer />
       </body>

@@ -68,6 +68,7 @@ export interface Config {
   blocks: {};
   collections: {
     menuItems: MenuItem;
+    footerMenuItems: FooterMenuItem;
     pages: Page;
     staff: Staff;
     staffGroups: StaffGroup;
@@ -89,6 +90,7 @@ export interface Config {
   };
   collectionsSelect: {
     menuItems: MenuItemsSelect<false> | MenuItemsSelect<true>;
+    footerMenuItems: FooterMenuItemsSelect<false> | FooterMenuItemsSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     staff: StaffSelect<false> | StaffSelect<true>;
     staffGroups: StaffGroupsSelect<false> | StaffGroupsSelect<true>;
@@ -264,6 +266,29 @@ export interface FolderInterface {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footerMenuItems".
+ */
+export interface FooterMenuItem {
+  id: number;
+  title: string;
+  slug?: string | null;
+  page?: (number | null) | Page;
+  url?: string | null;
+  order?: number | null;
+  parent?: (number | null) | FooterMenuItem;
+  breadcrumbs?:
+    | {
+        doc?: (number | null) | FooterMenuItem;
+        url?: string | null;
+        label?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -468,6 +493,10 @@ export interface PayloadLockedDocument {
         value: number | MenuItem;
       } | null)
     | ({
+        relationTo: 'footerMenuItems';
+        value: number | FooterMenuItem;
+      } | null)
+    | ({
         relationTo: 'pages';
         value: number | Page;
       } | null)
@@ -554,6 +583,28 @@ export interface PayloadMigration {
  * via the `definition` "menuItems_select".
  */
 export interface MenuItemsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  page?: T;
+  url?: T;
+  order?: T;
+  parent?: T;
+  breadcrumbs?:
+    | T
+    | {
+        doc?: T;
+        url?: T;
+        label?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footerMenuItems_select".
+ */
+export interface FooterMenuItemsSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   page?: T;

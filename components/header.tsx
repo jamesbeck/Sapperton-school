@@ -14,106 +14,13 @@ import { HoverScale } from "@/utils/hoverScale";
 import { GroupedMenuItem } from "@/types";
 import { Class } from "@/payload-types";
 
-const footerMenu = [
-  {
-    name: "Statuatory Information",
-    href: "/statuatory-information",
-    children: [
-      {
-        name: "Policies",
-        href: "/policies",
-      },
-      {
-        name: "PP Report",
-        href: "/pp-report",
-      },
-      {
-        name: "PE Report",
-        href: "/pe-report",
-      },
-      {
-        name: "Ofsted Report",
-        href: "/ofsted-report",
-      },
-      {
-        name: "British Values",
-        href: "/british-values",
-      },
-      {
-        name: "Safeguarding",
-        href: "/safeguarding",
-      },
-      {
-        name: "SEND",
-        href: "/send",
-      },
-      {
-        name: "Assessment Data",
-        href: "/assessment-data",
-      },
-    ],
-  },
-  {
-    name: "Other",
-    href: "/other",
-    children: [
-      {
-        name: "Privacy Policy",
-        href: "/privacy-policy",
-      },
-      {
-        name: "Cookie Policy",
-        href: "/cookie-policy",
-      },
-      {
-        name: "Terms & Conditions",
-        href: "/terms-and-conditions",
-      },
-    ],
-  },
-  {
-    name: "Etc",
-    href: "/other",
-    children: [
-      {
-        name: "Privacy Policy",
-        href: "/privacy-policy",
-      },
-      {
-        name: "Cookie Policy",
-        href: "/cookie-policy",
-      },
-      {
-        name: "Terms & Conditions",
-        href: "/terms-and-conditions",
-      },
-    ],
-  },
-  {
-    name: "Etc",
-    href: "/other",
-    children: [
-      {
-        name: "Privacy Policy",
-        href: "/privacy-policy",
-      },
-      {
-        name: "Cookie Policy",
-        href: "/cookie-policy",
-      },
-      {
-        name: "Terms & Conditions",
-        href: "/terms-and-conditions",
-      },
-    ],
-  },
-];
-
 export default function Header({
   menuItems,
+  footerMenuItems,
   classes,
 }: {
   menuItems: GroupedMenuItem[];
+  footerMenuItems: GroupedMenuItem[];
   classes: Class[];
 }) {
   const [open, setOpen] = useState(false);
@@ -259,7 +166,7 @@ export default function Header({
                   </div>
 
                   <div className="flex flex-col gap-2 md:flex-row md:gap-8">
-                    {footerMenu.map((item, i) => (
+                    {footerMenuItems.map((item, i) => (
                       <div key={i}>
                         <Link href={item.href}>
                           <div
@@ -267,18 +174,18 @@ export default function Header({
                               " text-sm border-white border-b-1 p-1"
                             )}
                           >
-                            {item.name}
+                            {item.title}
                           </div>
                         </Link>
                         <div className="flex flex-col p-1 pl-2">
-                          {item.children.map((child, i) => (
+                          {item.children.map((child, j) => (
                             <Link
-                              key={i}
+                              key={j}
                               href={child.href}
                               className="hover:underline"
                             >
                               <div className={cn("text-xs pl-1")}>
-                                {child.name}
+                                {child.title}
                               </div>
                             </Link>
                           ))}

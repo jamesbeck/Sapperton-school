@@ -22,6 +22,7 @@ export default async function ContentPage({
   //final slug
   const finalSlug = slug[slug.length - 1];
 
+  // Check main menu items first
   const menuItems = await payload.find({
     collection: "menuItems",
     where: {
@@ -30,14 +31,35 @@ export default async function ContentPage({
       },
     },
     depth: 2,
-    // id: "507f1f77bcf86cd799439011",
   });
 
+  // If not found in main menu, check footer menu items
+  let footerMenuItems = { docs: [] as typeof menuItems.docs };
   if (!menuItems.docs?.[0]?.page) {
+    footerMenuItems = await payload.find({
+      collection: "footerMenuItems",
+      where: {
+        slug: {
+          equals: finalSlug,
+        },
+      },
+      depth: 2,
+    });
+  }
+
+  // Use whichever has a page
+  const currentMenuItem = menuItems.docs?.[0]?.page
+    ? menuItems.docs[0]
+    : footerMenuItems.docs?.[0];
+
+  const isFooterMenuItem =
+    !menuItems.docs?.[0]?.page && footerMenuItems.docs?.[0]?.page;
+  const collection = isFooterMenuItem ? "footerMenuItems" : "menuItems";
+
+  if (!currentMenuItem?.page) {
     return notFound();
   }
 
-  const currentMenuItem = menuItems.docs[0];
   const page = currentMenuItem.page as Page;
   const banner = page.banner as Media;
 
@@ -62,7 +84,7 @@ export default async function ContentPage({
     const parent =
       typeof currentMenuItem.parent === "number"
         ? await payload.findByID({
-            collection: "menuItems",
+            collection: collection,
             id: parentId,
           })
         : currentMenuItem.parent;
@@ -70,7 +92,7 @@ export default async function ContentPage({
     parentName = parent.title;
 
     const siblings = await payload.find({
-      collection: "menuItems",
+      collection: collection,
       where: {
         parent: {
           equals: parentId,
@@ -94,7 +116,7 @@ export default async function ContentPage({
         focalX={banner?.focalX || 0}
         focalY={banner?.focalY || 0}
       />
-      <Breadcrumbs crumbs={menuItems.docs[0].breadcrumbs || []} />
+      <Breadcrumbs crumbs={currentMenuItem.breadcrumbs || []} />
       <Container>
         <div className="flex flex-col gap-8">
           <H1>{page.title}</H1>
@@ -219,7 +241,19 @@ export const generateStaticParams = async () => {
     },
   });
 
-  return menuItems.docs.map((item) => {
+  const footerMenuItems = await payload.find({
+    collection: "footerMenuItems",
+    depth: 2,
+    limit: 1000,
+    where: {
+      parent: { exists: true },
+      url: { exists: false },
+    },
+  });
+
+  const allItems = [...menuItems.docs, ...footerMenuItems.docs];
+
+  return allItems.map((item) => {
     return {
       slug:
         item.breadcrumbs?.[item.breadcrumbs.length - 1].url

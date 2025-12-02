@@ -18,6 +18,7 @@ import { Clubs } from "./collections/Clubs";
 import { Events } from "./collections/Events";
 import { Pages } from "./collections/Pages";
 import { MenuItems } from "./collections/MenuItems";
+import { FooterMenuItems } from "./collections/FooterMenuItems";
 import { NewsArticles } from "./collections/NewsArticles";
 import slugify from "slugify";
 import { HeroWords } from "./globals/heroWords";
@@ -50,6 +51,7 @@ export default buildConfig({
   },
   collections: [
     MenuItems,
+    FooterMenuItems,
     Pages,
     Staff,
     StaffGroups,
@@ -75,7 +77,7 @@ export default buildConfig({
   plugins: [
     payloadCloudPlugin(),
     nestedDocsPlugin({
-      collections: ["menuItems"],
+      collections: ["menuItems", "footerMenuItems"],
       generateLabel: (_, doc) => doc.title as string,
       generateURL: (docs) =>
         docs.reduce((url, doc) => {
