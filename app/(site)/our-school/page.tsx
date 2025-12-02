@@ -10,7 +10,7 @@ import H1 from "@/components/ui/h1";
 export default async function StaffPage() {
   return (
     <div>
-      <Banner url={"/hero/1.png"} focalX={50} focalY={30} />
+      <Banner url={"/defaultBanner.jpg"} focalX={50} focalY={40} />
       <Breadcrumbs crumbs={[{ label: "Our School", url: "/our-school" }]} />
 
       <Container>

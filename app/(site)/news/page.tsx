@@ -15,7 +15,7 @@ export default async function NewsIndexPage() {
 
   return (
     <div>
-      <Banner url={"/hero/1.png"} focalX={50} focalY={50} />
+      <Banner url={"/defaultBanner.jpg"} focalX={50} focalY={40} />
       <Breadcrumbs crumbs={[{ label: "News", url: "/news" }]} />
 
       <Container>

@@ -9,7 +9,7 @@ import { Phone, Mail, MapPin, Clock } from "lucide-react";
 export default function ContactPage() {
   return (
     <div>
-      <Banner url={"/hero/1.png"} focalX={50} focalY={50} />
+      <Banner url={"/defaultBanner.jpg"} focalX={50} focalY={40} />
       <Breadcrumbs crumbs={[{ label: "Contact Us", url: "/contact-us" }]} />
 
       {/* Introduction Section */}
@@ -17,9 +17,9 @@ export default function ContactPage() {
         <div className="flex flex-col gap-6 text-center max-w-3xl mx-auto">
           <H1>Get in Touch</H1>
           <p className="text-lg text-gray-700">
-            We&apos;d love to hear from you! Whether you have a question about our
-            school, want to arrange a visit, or need any information, our team
-            is here to help.
+            We&apos;d love to hear from you! Whether you have a question about
+            our school, want to arrange a visit, or need any information, our
+            team is here to help.
           </p>
         </div>
       </Container>
@@ -39,10 +39,14 @@ export default function ContactPage() {
                 <div className="text-left">
                   <h3 className="font-bold text-lg mb-1">Address</h3>
                   <p className="text-white/90">
-                    Sapperton C of E Primary School<br />
-                    Sapperton<br />
-                    Cirencester<br />
-                    Gloucestershire<br />
+                    Sapperton C of E Primary School
+                    <br />
+                    Sapperton
+                    <br />
+                    Cirencester
+                    <br />
+                    Gloucestershire
+                    <br />
                     GL7 6LQ
                   </p>
                 </div>
@@ -85,7 +89,8 @@ export default function ContactPage() {
                 <div className="text-left">
                   <h3 className="font-bold text-lg mb-1">School Hours</h3>
                   <p className="text-white/90">
-                    Monday - Friday<br />
+                    Monday - Friday
+                    <br />
                     8:45 AM - 3:15 PM
                   </p>
                 </div>
@@ -118,7 +123,8 @@ export default function ContactPage() {
           <div className="text-center mb-8">
             <H2>Send Us a Message</H2>
             <p className="text-gray-600 mt-4">
-              Fill out the form below and we&apos;ll get back to you as soon as possible.
+              Fill out the form below and we&apos;ll get back to you as soon as
+              possible.
             </p>
           </div>
           <ContactForm />

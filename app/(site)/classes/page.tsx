@@ -14,7 +14,7 @@ export default async function StaffPage() {
 
   return (
     <div>
-      <Banner url={"/hero/1.png"} focalX={50} focalY={30} />
+      <Banner url={"/defaultBanner.jpg"} focalX={50} focalY={40} />
       <Breadcrumbs crumbs={[{ label: "Our Classes", url: "/classes" }]} />
 
       <Container>

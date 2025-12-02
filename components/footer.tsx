@@ -70,12 +70,6 @@ export default function Footer() {
               >
                 Classes
               </Link>
-              <Link
-                href="/about-us"
-                className="hover:text-white hover:underline transition-colors"
-              >
-                About Us
-              </Link>
             </div>
           </div>
 

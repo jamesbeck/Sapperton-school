@@ -14,7 +14,7 @@ import { HoverScale } from "@/utils/hoverScale";
 import { GroupedMenuItem } from "@/types";
 import { Class } from "@/payload-types";
 
-const subMenu = [
+const footerMenu = [
   {
     name: "Statuatory Information",
     href: "/statuatory-information",
@@ -259,7 +259,7 @@ export default function Header({
                   </div>
 
                   <div className="flex flex-col gap-2 md:flex-row md:gap-8">
-                    {subMenu.map((item, i) => (
+                    {footerMenu.map((item, i) => (
                       <div key={i}>
                         <Link href={item.href}>
                           <div

@@ -8,7 +8,7 @@ import { RichText } from "@payloadcms/richtext-lexical/react";
 import ClassCard from "@/components/classCard";
 import NewsCard from "@/components/newsCard";
 import H1 from "@/components/ui/h1";
-import Image from "next/image"
+import Image from "next/image";
 
 export default async function StaffPage({
   params,
@@ -28,7 +28,7 @@ export default async function StaffPage({
     },
   });
 
-  const staff = staffResults.docs[0]
+  const staff = staffResults.docs[0];
   const image = staff.image as Media;
 
   const classesTaught = await payload.find({
@@ -68,11 +68,7 @@ export default async function StaffPage({
 
   return (
     <div>
-      <Banner
-        url={"/hero/1.png"}
-        focalX={50}
-        focalY={30}
-      />
+      <Banner url={"/defaultBanner.jpg"} focalX={50} focalY={40} />
 
       <Breadcrumbs
         crumbs={[
@@ -98,7 +94,6 @@ export default async function StaffPage({
             )}
           </div>
           <RichText data={staff.biography} className="page-content" />
-          
 
           {classesAssisted.docs?.length > 0 && (
             <>
@@ -110,21 +105,20 @@ export default async function StaffPage({
               </div>
             </>
           )}
-
         </div>
       </Container>
 
       <Container colour="green">
         {classesTaught.docs?.length > 0 && (
-            <div className="flex flex-col gap-8">
-              <H2>Classes Taught</H2>
-              <div className="flex gap-8 justify-center">
-                {classesTaught.docs?.map((taughtClass) => (
-                  <ClassCard schoolClass={taughtClass} key={taughtClass.id} />
-                ))}
-              </div>
+          <div className="flex flex-col gap-8">
+            <H2>Classes Taught</H2>
+            <div className="flex gap-8 justify-center">
+              {classesTaught.docs?.map((taughtClass) => (
+                <ClassCard schoolClass={taughtClass} key={taughtClass.id} />
+              ))}
             </div>
-          )}
+          </div>
+        )}
       </Container>
 
       <Container>
