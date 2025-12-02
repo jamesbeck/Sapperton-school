@@ -16,13 +16,15 @@ export default function Breadcrumbs({
           {crumbs.map((crumb, i) => (
             <div key={i} className="flex space-x-2">
               <ChevronRightIcon className="w-4 h-4 relative top-[2px]" />
-              <Link
-                key={i}
-                href={crumb.url || "#"}
-                className=" text-white hover:underline"
-              >
-                {crumb.label || "Unknown"}
-              </Link>
+              {crumb.url ? (
+                <Link href={crumb.url} className=" text-white hover:underline">
+                  {crumb.label || "Unknown"}
+                </Link>
+              ) : (
+                <span className="text-white/80">
+                  {crumb.label || "Unknown"}
+                </span>
+              )}
             </div>
           ))}
         </div>
