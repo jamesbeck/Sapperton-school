@@ -37,18 +37,20 @@ export default function Hero({
     <div>
       <div className="w-full h-screen relative">
         <Image
-          src="/hero/2.png"
+          src="/hero/1.png"
           alt="Hero"
           width={1000}
           height={600}
           className="absolute w-full h-full object-cover object-center -z-10"
         />
+        {/* Gradient overlay for header logo visibility */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/30 -z-10" />
         <div className="px-8 md:px-16 h-full">
           <div className="h-full flex items-center">
             <Container>
               <div className="flex flex-col gap-8">
                 <div
-                  className={`text-3xl md:text-7xl text-white font-extralight tracking-tighter ${bodoniModa.className}`}
+                  className={`text-3xl md:text-7xl text-white font-extralight tracking-tighter ${bodoniModa.className} `}
                 >
                   Inspiring young minds <br /> to become
                   <TypeAnimation
@@ -56,7 +58,7 @@ export default function Hero({
                       .map((item) => [" " + item.word + ".", 2000])
                       .flat()}
                     speed={1}
-                    className={`font-bold `}
+                    className={`font-bold`}
                     repeat={Infinity}
                   />
                 </div>
