@@ -20,6 +20,8 @@ import {
   MusicIcon,
 } from "lucide-react";
 
+export const revalidate = 30;
+
 function getFileIcon(filename: string) {
   const ext = filename.split(".").pop()?.toLowerCase();
 

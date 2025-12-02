@@ -9,6 +9,8 @@ import InstagramPreview from "@/components/instagramPreview";
 import VideoSection from "@/components/videoSection";
 import payload from "@/payload";
 
+export const revalidate = 30;
+
 export default async function Home({}) {
   //get headteacher global
 

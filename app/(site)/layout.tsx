@@ -8,6 +8,9 @@ import { GroupedMenuItem } from "@/types";
 import { MenuItem, FooterMenuItem } from "@/payload-types";
 import Footer from "@/components/footer";
 
+// Revalidate menu structure every 30 seconds
+export const revalidate = 30;
+
 const payload = await getPayload({ config: configPromise });
 
 export const metadata: Metadata = {

@@ -12,6 +12,8 @@ import Link from "next/link";
 import { FileIcon, defaultStyles } from "react-file-icon";
 import { ImageIcon } from "lucide-react";
 
+export const revalidate = 30;
+
 export default async function ContentPage({
   params,
 }: {

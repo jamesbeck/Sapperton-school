@@ -9,6 +9,8 @@ import { notFound } from "next/navigation";
 import { Calendar, Clock, Tag } from "lucide-react";
 import { Media, Class } from "@/payload-types";
 
+export const revalidate = 30;
+
 export default async function EventDetailPage({
   params,
 }: {

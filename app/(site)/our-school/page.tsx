@@ -7,6 +7,8 @@ import { StaffGroup } from "@/payload-types";
 import Breadcrumbs from "@/components/breadcrumbs";
 import H1 from "@/components/ui/h1";
 
+export const revalidate = 30;
+
 export default async function StaffPage() {
   return (
     <div>

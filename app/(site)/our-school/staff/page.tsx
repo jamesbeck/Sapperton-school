@@ -10,7 +10,7 @@ import H1 from "@/components/ui/h1";
 // Incremental Static Regeneration: rebuild this page in the background at most every 10 minutes
 // while serving the prior cached HTML to visitors. Adjust as needed.
 // Docs: https://nextjs.org/docs/app/building-your-application/caching#revalidating-data
-export const revalidate = 600; // seconds
+export const revalidate = 30; // seconds
 
 export default async function StaffPage() {
   const staffGroups = await payload.find({

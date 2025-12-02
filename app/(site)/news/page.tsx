@@ -5,6 +5,8 @@ import H1 from "@/components/ui/h1";
 import NewsCard from "@/components/newsCard";
 import payload from "@/payload";
 
+export const revalidate = 30;
+
 export default async function NewsIndexPage() {
   const newsArticles = await payload.find({
     collection: "newsArticles",
