@@ -44,13 +44,13 @@ export default function Hero({
           className="absolute w-full h-full object-cover object-center -z-10"
         />
         {/* Gradient overlay for header logo visibility */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/30 -z-10" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-black/50 -z-10" />
         <div className="px-8 md:px-16 h-full">
           <div className="h-full flex items-center">
             <Container>
               <div className="flex flex-col gap-8">
                 <div
-                  className={`text-3xl md:text-7xl text-white font-extralight tracking-tighter ${bodoniModa.className} `}
+                  className={`text-3xl md:text-7xl text-white font-extralight tracking-tighter ${bodoniModa.className} [text-shadow:_2px_2px_8px_rgb(0_0_0_/_80%),_-1px_-1px_4px_rgb(0_0_0_/_50%)]`}
                 >
                   Inspiring young minds <br /> to become
                   <TypeAnimation
