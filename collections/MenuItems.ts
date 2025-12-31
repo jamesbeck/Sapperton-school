@@ -11,23 +11,31 @@ export const MenuItems: CollectionConfig = {
   admin: { useAsTitle: "title" },
   hooks: {
     beforeChange: [
-      async ({ data, req }) => {
-        // Update breadcrumb URLs - set to null if the menu item has no page or manual url
-        if (data?.breadcrumbs && Array.isArray(data.breadcrumbs)) {
+      async ({ data, req, operation }) => {
+        // Only run breadcrumb logic on update, not create
+        if (
+          operation === "update" &&
+          data?.breadcrumbs &&
+          Array.isArray(data.breadcrumbs)
+        ) {
           for (const crumb of data.breadcrumbs) {
             if (crumb.doc) {
-              const docId =
-                typeof crumb.doc === "number" ? crumb.doc : crumb.doc.id;
+              try {
+                const docId =
+                  typeof crumb.doc === "number" ? crumb.doc : crumb.doc.id;
 
-              const menuItem = await req.payload.findByID({
-                collection: "menuItems",
-                id: docId,
-                depth: 0,
-              });
+                const menuItem = await req.payload.findByID({
+                  collection: "menuItems",
+                  id: docId,
+                  depth: 0,
+                });
 
-              // Set url to null if no page and no manual url
-              if (!menuItem.page && !menuItem.url) {
-                crumb.url = null;
+                // Set url to null if no page and no manual url
+                if (!menuItem.page && !menuItem.url) {
+                  crumb.url = null;
+                }
+              } catch (error) {
+                // Item may not exist yet, skip
               }
             }
           }
@@ -76,6 +84,11 @@ export const MenuItems: CollectionConfig = {
     {
       name: "url",
       type: "text",
+    },
+    {
+      name: "parent",
+      type: "relationship",
+      relationTo: "menuItems",
     },
     {
       name: "order",

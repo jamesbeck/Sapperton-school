@@ -153,8 +153,8 @@ export interface MenuItem {
   slug?: string | null;
   page?: (number | null) | Page;
   url?: string | null;
-  order?: number | null;
   parent?: (number | null) | MenuItem;
+  order?: number | null;
   breadcrumbs?:
     | {
         doc?: (number | null) | MenuItem;
@@ -279,8 +279,8 @@ export interface FooterMenuItem {
   slug?: string | null;
   page?: (number | null) | Page;
   url?: string | null;
-  order?: number | null;
   parent?: (number | null) | FooterMenuItem;
+  order?: number | null;
   breadcrumbs?:
     | {
         doc?: (number | null) | FooterMenuItem;
@@ -587,8 +587,8 @@ export interface MenuItemsSelect<T extends boolean = true> {
   slug?: T;
   page?: T;
   url?: T;
-  order?: T;
   parent?: T;
+  order?: T;
   breadcrumbs?:
     | T
     | {
@@ -609,8 +609,8 @@ export interface FooterMenuItemsSelect<T extends boolean = true> {
   slug?: T;
   page?: T;
   url?: T;
-  order?: T;
   parent?: T;
+  order?: T;
   breadcrumbs?:
     | T
     | {

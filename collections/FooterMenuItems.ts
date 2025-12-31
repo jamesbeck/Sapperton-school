@@ -86,6 +86,11 @@ export const FooterMenuItems: CollectionConfig = {
       type: "text",
     },
     {
+      name: "parent",
+      type: "relationship",
+      relationTo: "footerMenuItems",
+    },
+    {
       name: "order",
       type: "number",
     },
