@@ -2,6 +2,7 @@ import Container from "./container";
 import Link from "next/link";
 import Image from "next/image";
 import { Phone, Mail, MapPin, Instagram, Facebook } from "lucide-react";
+import { bodoniModa } from "@/fonts";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -9,6 +10,11 @@ export default function Footer() {
   return (
     <div className="mt-16">
       <Container colour="green">
+        <p
+          className={`text-white text-2xl md:text-3xl text-center mb-8 italic ${bodoniModa.className}`}
+        >
+          To nurture faith; to inspire success
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
           {/* Contact Information */}
           <div className="flex flex-col gap-4">

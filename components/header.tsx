@@ -13,6 +13,7 @@ import { cn } from "@/utils/cn";
 import { HoverScale } from "@/utils/hoverScale";
 import { GroupedMenuItem } from "@/types";
 import { Class } from "@/payload-types";
+import { bodoniModa } from "@/fonts";
 
 export default function Header({
   menuItems,
