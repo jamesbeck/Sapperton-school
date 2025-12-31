@@ -76,6 +76,7 @@ export default async function StaffPage({
 
   const schoolClass = schoolClasses.docs?.[0];
   const image = schoolClass?.image as Media;
+  const banner = schoolClass?.banner as Media;
 
   const galleryImages = schoolClass.galleryImages?.map((image) => {
     const media = image as Media;
@@ -128,9 +129,9 @@ export default async function StaffPage({
   return (
     <div>
       <Banner
-        url={image?.url || ""}
-        focalX={image?.focalX || 50}
-        focalY={image?.focalY || 30}
+        url={banner?.url || ""}
+        focalX={banner?.focalX || 50}
+        focalY={banner?.focalY || 30}
       />
 
       <Breadcrumbs
