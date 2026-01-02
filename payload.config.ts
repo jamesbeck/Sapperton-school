@@ -2,10 +2,7 @@
 import { s3Storage } from "@payloadcms/storage-s3";
 import { postgresAdapter } from "@payloadcms/db-postgres";
 import { payloadCloudPlugin } from "@payloadcms/payload-cloud";
-import {
-  lexicalEditor,
-  HeadingFeature,
-} from "@payloadcms/richtext-lexical";
+import { lexicalEditor, HeadingFeature } from "@payloadcms/richtext-lexical";
 import { nestedDocsPlugin } from "@payloadcms/plugin-nested-docs";
 import path from "path";
 import { buildConfig } from "payload";
