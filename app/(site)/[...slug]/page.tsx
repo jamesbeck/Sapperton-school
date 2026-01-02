@@ -134,9 +134,9 @@ export default async function ContentPage({
         </Container>
       )}
       {!!page.files?.length && (
-        <Container>
+        <Container colour="green">
           <div className="flex flex-col gap-8">
-            <H2>File Downloads</H2>
+            <H2 className="text-white">File Downloads</H2>
             <div className="flex flex-col gap-3 max-w-3xl mx-auto">
               {page.files?.map((file) => {
                 const media = file as Media;
