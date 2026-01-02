@@ -92,11 +92,10 @@ export default function HeadMessage({
                 Come and see us in action
               </h3>
               <p className="text-foreground text-lg mb-6 text-balance">
-                We&apos;d love to welcome you to Sapperton Church of England
-                Primary School. There&apos;s no better way to experience the
-                warmth and joy of our community than by visiting in person.
-                Please get in touch to arrange a visit — we can&apos;t wait to
-                meet you!
+                We&apos;d love to welcome you to Sapperton Primary School.
+                There&apos;s no better way to experience the warmth and joy of
+                our community than by visiting in person. Please get in touch to
+                arrange a visit - we can&apos;t wait to meet you!
               </p>
               <div className="flex justify-center">
                 <Button
