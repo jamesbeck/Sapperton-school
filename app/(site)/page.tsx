@@ -9,6 +9,8 @@ import ClassEvents from "@/components/classEvents";
 import InstagramPreview from "@/components/instagramPreview";
 import VideoSection from "@/components/videoSection";
 import payload from "@/payload";
+import Link from "next/link";
+import { CalendarDays } from "lucide-react";
 
 export const revalidate = 30;
 
@@ -47,16 +49,28 @@ export default async function Home({}) {
     depth: 2,
   });
 
-  // Fetch upcoming events
+  // Fetch upcoming events (next 7 days only)
+  const sevenDaysFromNow = new Date();
+  sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+
   const upcomingEvents = await payload.find({
     collection: "events",
     depth: 2,
     limit: 10,
     sort: "date",
     where: {
-      date: {
-        greater_than_equal: new Date().toISOString(),
-      },
+      and: [
+        {
+          date: {
+            greater_than_equal: new Date().toISOString(),
+          },
+        },
+        {
+          date: {
+            less_than_equal: sevenDaysFromNow.toISOString(),
+          },
+        },
+      ],
     },
   });
 
@@ -71,7 +85,22 @@ export default async function Home({}) {
         <div className="flex flex-col gap-8 items-center">
           <div className="flex flex-col gap-8">
             <H2>Upcoming Events</H2>
-            <ClassEvents events={upcomingEvents.docs} />
+            {upcomingEvents.docs.length > 0 ? (
+              <ClassEvents events={upcomingEvents.docs} />
+            ) : (
+              <p className="text-white/80 text-center">
+                No events scheduled in the next 7 days.
+              </p>
+            )}
+            <div className="flex justify-center">
+              <Link
+                href="/events"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-white text-sapperton-green rounded-lg font-semibold hover:bg-white/90 transition-colors"
+              >
+                <CalendarDays className="w-5 h-5" />
+                View Full Calendar
+              </Link>
+            </div>
           </div>
         </div>
       </Container>
