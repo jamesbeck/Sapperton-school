@@ -8,6 +8,9 @@ import {
   List,
   Eye,
   EyeOff,
+  CalendarPlus,
+  Link as LinkIcon,
+  Check,
 } from "lucide-react";
 import { Calendar, dateFnsLocalizer, Views, View } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
@@ -85,11 +88,17 @@ const getEventBorderColor = (type: string): string => {
   }
 };
 
+// Calendar subscription URLs
+const CALENDAR_FEED_URL = "https://www.sappertonschool.org/api/calendar/feed";
+const WEBCAL_URL = "webcal://www.sappertonschool.org/api/calendar/feed";
+
 export default function EventsCalendar({ events }: { events: Event[] }) {
   const [selectedMonth, setSelectedMonth] = useState<string>("");
   const [viewType, setViewType] = useState<ViewType>("calendar");
   const [calendarView, setCalendarView] = useState<View>(Views.MONTH);
   const [calendarDate, setCalendarDate] = useState<Date>(new Date());
+  const [showSubscribeMenu, setShowSubscribeMenu] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [hiddenTypes, setHiddenTypes] = useState<Set<EventType>>(new Set());
   const [selectedClassId, setSelectedClassId] = useState<string>("");
   const dateRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
@@ -367,29 +376,143 @@ export default function EventsCalendar({ events }: { events: Event[] }) {
         {/* View toggle and month filter */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           {/* View toggle */}
-          <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
-            <button
-              onClick={() => setViewType("calendar")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                viewType === "calendar"
-                  ? "bg-white text-sapperton-green shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              <CalendarIcon className="w-4 h-4" />
-              Calendar
-            </button>
-            <button
-              onClick={() => setViewType("list")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                viewType === "list"
-                  ? "bg-white text-sapperton-green shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              <List className="w-4 h-4" />
-              List
-            </button>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
+              <button
+                onClick={() => setViewType("calendar")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  viewType === "calendar"
+                    ? "bg-white text-sapperton-green shadow-sm"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                <CalendarIcon className="w-4 h-4" />
+                Calendar
+              </button>
+              <button
+                onClick={() => setViewType("list")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  viewType === "list"
+                    ? "bg-white text-sapperton-green shadow-sm"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                <List className="w-4 h-4" />
+                List
+              </button>
+            </div>
+
+            {/* Subscribe button */}
+            <div className="relative">
+              <button
+                onClick={() => setShowSubscribeMenu(!showSubscribeMenu)}
+                className="flex items-center gap-2 px-4 py-2 bg-sapperton-green text-white rounded-lg text-sm font-medium hover:bg-sapperton-green/90 transition-colors"
+              >
+                <CalendarPlus className="w-4 h-4" />
+                Subscribe
+                <ChevronDown
+                  className={`w-3 h-3 transition-transform ${showSubscribeMenu ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              {/* Subscribe dropdown menu */}
+              {showSubscribeMenu && (
+                <>
+                  {/* Backdrop to close menu */}
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setShowSubscribeMenu(false)}
+                  />
+                  <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-20 overflow-hidden">
+                    <div className="p-3 border-b border-gray-100 bg-gray-50">
+                      <p className="text-xs text-gray-600">
+                        Subscribe to get automatic updates when events are added
+                        or changed.
+                      </p>
+                    </div>
+                    <div className="p-2">
+                      {/* Direct subscribe - works with most calendar apps */}
+                      <a
+                        href={WEBCAL_URL}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-gray-50 transition-colors group"
+                        onClick={() => setShowSubscribeMenu(false)}
+                      >
+                        <CalendarPlus className="w-5 h-5 text-sapperton-green" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            Open in Calendar App
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Apple Calendar, Outlook, etc.
+                          </p>
+                        </div>
+                      </a>
+
+                      {/* Google Calendar */}
+                      <a
+                        href={`https://calendar.google.com/calendar/r?cid=${encodeURIComponent(CALENDAR_FEED_URL)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-gray-50 transition-colors"
+                        onClick={() => setShowSubscribeMenu(false)}
+                      >
+                        <svg
+                          className="w-5 h-5"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                        >
+                          <path
+                            d="M18.316 5.684H5.684v12.632h12.632V5.684z"
+                            fill="#fff"
+                          />
+                          <path
+                            d="M6.5 14.316l1.053-1.053 1.58 1.58 4.21-4.211 1.053 1.052-5.263 5.263L6.5 14.316z"
+                            fill="#1A73E8"
+                          />
+                          <path
+                            d="M21.5 6.5v11a4 4 0 01-4 4h-11a4 4 0 01-4-4v-11a4 4 0 014-4h11a4 4 0 014 4z"
+                            stroke="#1A73E8"
+                            strokeWidth="1.5"
+                          />
+                        </svg>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            Google Calendar
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Subscribe via Google
+                          </p>
+                        </div>
+                      </a>
+
+                      {/* Copy URL */}
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(CALENDAR_FEED_URL);
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 2000);
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-gray-50 transition-colors"
+                      >
+                        {copied ? (
+                          <Check className="w-5 h-5 text-green-600" />
+                        ) : (
+                          <LinkIcon className="w-5 h-5 text-gray-500" />
+                        )}
+                        <div className="text-left">
+                          <p className="text-sm font-medium text-gray-900">
+                            {copied ? "Copied!" : "Copy Calendar URL"}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            For other calendar apps
+                          </p>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Month filter - only show in list view */}
