@@ -65,14 +65,25 @@ export default buildConfig({
   globals: [HeroWords, HeadteacherWelcome],
   editor: lexicalEditor({
     features: ({ defaultFeatures }) =>
-      defaultFeatures.map((feature) => {
-        if (feature.key === "heading") {
-          return HeadingFeature({
-            enabledHeadingSizes: ["h2"],
-          });
-        }
-        return feature;
-      }),
+      defaultFeatures
+        .filter(
+          (feature) =>
+            ![
+              "blockquote",
+              "inlineCode",
+              "superscript",
+              "subscript",
+              "strikethrough",
+            ].includes(feature.key)
+        )
+        .map((feature) => {
+          if (feature.key === "heading") {
+            return HeadingFeature({
+              enabledHeadingSizes: ["h2"],
+            });
+          }
+          return feature;
+        }),
   }),
   secret: process.env.PAYLOAD_SECRET || "",
   typescript: {

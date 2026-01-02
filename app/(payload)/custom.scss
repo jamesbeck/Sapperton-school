@@ -1,0 +1,58 @@
+// Sapperton School CMS Rich Text Editor Styles
+// These styles match the website's .page-content styling
+
+$sapperton-green: #347560;
+
+// Import fonts for the admin
+@import url("https://fonts.googleapis.com/css2?family=Bodoni+Moda:wght@400&family=Geist:wght@400;500;600;700&display=swap");
+
+// Rich text editor content styling
+.rich-text-lexical,
+.lexical-content,
+[data-lexical-editor] {
+  font-family:
+    "Geist",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+
+  p {
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    text-align: center;
+  }
+
+  h1 {
+    font-size: 3rem;
+    font-weight: bold;
+    text-align: center;
+  }
+
+  h2 {
+    font-family: "Bodoni Moda", serif;
+    font-size: 2rem;
+    font-weight: 400;
+    color: $sapperton-green;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-align: center;
+  }
+
+  ul {
+    list-style-type: disc;
+    margin-left: 1rem;
+  }
+
+  ol {
+    list-style-type: decimal;
+    margin-left: 1rem;
+  }
+}

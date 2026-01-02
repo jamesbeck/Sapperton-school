@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { geistSans, geistMono } from "@/fonts";
+import { geistSans, geistMono, bodoniModa } from "@/fonts";
 import "./globals.css";
 import Header from "@/components/header";
 import { getPayload } from "payload";
@@ -113,7 +113,7 @@ export default async function RootLayout({
   return (
     <html lang="en" style={{ scrollBehavior: "smooth" }}>
       <body
-        className={`antialiased ${geistSans.variable} ${geistMono.variable}`}
+        className={`antialiased ${geistSans.variable} ${geistMono.variable} ${bodoniModa.variable}`}
       >
         <Header
           menuItems={menuItemsGrouped}

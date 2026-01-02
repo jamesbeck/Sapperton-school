@@ -24,11 +24,13 @@ body {
   font-weight: bold;
 }
 .page-content h2 {
+  font-family: var(--font-bodoni-moda), serif;
   font-size: 2rem;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--color-sapperton-green);
   margin-top: 2rem;
   margin-bottom: 1rem;
+  text-align: center;
 }
 .page-content h3 {
   font-size: 1.5rem;
