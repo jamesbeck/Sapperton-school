@@ -93,6 +93,16 @@ function getCategoryLabel(type: string): string {
 
 export async function GET(request: NextRequest) {
   try {
+    // Parse class filter from query parameters
+    const { searchParams } = new URL(request.url);
+    const classesParam = searchParams.get("classes");
+    const filterClassIds: number[] = classesParam
+      ? classesParam
+          .split(",")
+          .map((id) => parseInt(id, 10))
+          .filter((id) => !isNaN(id))
+      : [];
+
     // Fetch all future and recent past events (last 30 days for context)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -109,7 +119,45 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const events = eventsResult.docs;
+    // Filter events based on class selection
+    let events = eventsResult.docs;
+
+    if (filterClassIds.length > 0) {
+      events = events.filter((event) => {
+        // Always include events without classes (whole-school events)
+        if (!event.classes || event.classes.length === 0) {
+          return true;
+        }
+        // Include events that match any of the selected classes
+        return event.classes.some((cls) => {
+          const classId = typeof cls === "number" ? cls : cls.id;
+          return filterClassIds.includes(classId);
+        });
+      });
+    }
+
+    // Generate calendar name based on classes
+    let calendarName = "Sapperton School Calendar";
+    if (filterClassIds.length > 0) {
+      // We'll need to look up class names from the events
+      const classNames = new Set<string>();
+      events.forEach((event) => {
+        if (event.classes) {
+          event.classes.forEach((cls) => {
+            if (
+              typeof cls === "object" &&
+              cls !== null &&
+              filterClassIds.includes(cls.id)
+            ) {
+              classNames.add(cls.name);
+            }
+          });
+        }
+      });
+      if (classNames.size > 0) {
+        calendarName = `Sapperton School - ${Array.from(classNames).join(", ")}`;
+      }
+    }
 
     // Build iCalendar content
     const lines: string[] = [
@@ -118,7 +166,7 @@ export async function GET(request: NextRequest) {
       "PRODID:-//Sapperton School//School Calendar//EN",
       "CALSCALE:GREGORIAN",
       "METHOD:PUBLISH",
-      "X-WR-CALNAME:Sapperton School Calendar",
+      `X-WR-CALNAME:${calendarName}`,
       "X-WR-TIMEZONE:Europe/London",
       "REFRESH-INTERVAL;VALUE=DURATION:PT1H",
       "X-PUBLISHED-TTL:PT1H",

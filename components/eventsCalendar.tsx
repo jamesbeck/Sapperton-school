@@ -88,9 +88,10 @@ const getEventBorderColor = (type: string): string => {
   }
 };
 
-// Calendar subscription URLs
-const CALENDAR_FEED_URL = "https://www.sappertonschool.org/api/calendar/feed";
-const WEBCAL_URL = "webcal://www.sappertonschool.org/api/calendar/feed";
+// Calendar subscription base URLs
+const CALENDAR_FEED_BASE_URL =
+  "https://www.sappertonschool.org/api/calendar/feed";
+const WEBCAL_BASE_URL = "webcal://www.sappertonschool.org/api/calendar/feed";
 
 export default function EventsCalendar({ events }: { events: Event[] }) {
   const [selectedMonth, setSelectedMonth] = useState<string>("");
@@ -101,7 +102,35 @@ export default function EventsCalendar({ events }: { events: Event[] }) {
   const [copied, setCopied] = useState(false);
   const [hiddenTypes, setHiddenTypes] = useState<Set<EventType>>(new Set());
   const [selectedClassId, setSelectedClassId] = useState<string>("");
+  const [subscribeClassIds, setSubscribeClassIds] = useState<Set<number>>(
+    new Set()
+  );
   const dateRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
+  // Generate subscription URLs based on selected classes
+  const getSubscriptionUrls = useMemo(() => {
+    const classParam =
+      subscribeClassIds.size > 0
+        ? `?classes=${Array.from(subscribeClassIds).join(",")}`
+        : "";
+    return {
+      feedUrl: `${CALENDAR_FEED_BASE_URL}${classParam}`,
+      webcalUrl: `${WEBCAL_BASE_URL}${classParam}`,
+    };
+  }, [subscribeClassIds]);
+
+  // Toggle a class for subscription
+  const toggleSubscribeClass = (classId: number) => {
+    setSubscribeClassIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(classId)) {
+        newSet.delete(classId);
+      } else {
+        newSet.add(classId);
+      }
+      return newSet;
+    });
+  };
 
   // Extract unique classes from all events
   const uniqueClasses = useMemo(() => {
@@ -423,17 +452,61 @@ export default function EventsCalendar({ events }: { events: Event[] }) {
                     className="fixed inset-0 z-10"
                     onClick={() => setShowSubscribeMenu(false)}
                   />
-                  <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-20 overflow-hidden">
+                  <div className="absolute top-full left-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-20 overflow-hidden max-h-[80vh] overflow-y-auto">
                     <div className="p-3 border-b border-gray-100 bg-gray-50">
                       <p className="text-xs text-gray-600">
                         Subscribe to get automatic updates when events are added
                         or changed.
                       </p>
                     </div>
+
+                    {/* Class selection */}
+                    {uniqueClasses.length > 0 && (
+                      <div className="p-3 border-b border-gray-100">
+                        <p className="text-sm font-medium text-gray-900 mb-2">
+                          Select classes to include:
+                        </p>
+                        <p className="text-xs text-gray-500 mb-3">
+                          Whole-school events are always included.
+                        </p>
+                        <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                          {uniqueClasses.map((cls) => (
+                            <label
+                              key={cls.id}
+                              className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-50 cursor-pointer"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={subscribeClassIds.has(cls.id)}
+                                onChange={() => toggleSubscribeClass(cls.id)}
+                                className="w-4 h-4 rounded border-gray-300 text-sapperton-green focus:ring-sapperton-green"
+                              />
+                              <span className="text-sm text-gray-700">
+                                {cls.name}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                        {subscribeClassIds.size > 0 && (
+                          <button
+                            onClick={() => setSubscribeClassIds(new Set())}
+                            className="text-xs text-sapperton-green hover:underline mt-2"
+                          >
+                            Clear selection (subscribe to all)
+                          </button>
+                        )}
+                        {subscribeClassIds.size === 0 && (
+                          <p className="text-xs text-gray-400 mt-2 italic">
+                            No classes selected = all events included
+                          </p>
+                        )}
+                      </div>
+                    )}
+
                     <div className="p-2">
                       {/* Direct subscribe - works with most calendar apps */}
                       <a
-                        href={WEBCAL_URL}
+                        href={getSubscriptionUrls.webcalUrl}
                         className="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-gray-50 transition-colors group"
                         onClick={() => setShowSubscribeMenu(false)}
                       >
@@ -450,7 +523,7 @@ export default function EventsCalendar({ events }: { events: Event[] }) {
 
                       {/* Google Calendar */}
                       <a
-                        href={`https://calendar.google.com/calendar/r?cid=${encodeURIComponent(CALENDAR_FEED_URL)}`}
+                        href={`https://calendar.google.com/calendar/r?cid=${encodeURIComponent(getSubscriptionUrls.feedUrl)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-gray-50 transition-colors"
@@ -488,7 +561,9 @@ export default function EventsCalendar({ events }: { events: Event[] }) {
                       {/* Copy URL */}
                       <button
                         onClick={() => {
-                          navigator.clipboard.writeText(CALENDAR_FEED_URL);
+                          navigator.clipboard.writeText(
+                            getSubscriptionUrls.feedUrl
+                          );
                           setCopied(true);
                           setTimeout(() => setCopied(false), 2000);
                         }}
