@@ -81,7 +81,8 @@ export default function Header({
                             className={cn(
                               "flex items-center justify-between text-2xl border-white p-2 group duration-300",
                               i == 0 ? "border-t-0" : "border-t-2",
-                              openSection === i ? "" : "hover:pl-4"
+                              openSection === i ? "" : "hover:pl-4",
+                              bodoniModa.className
                             )}
                             onClick={() =>
                               openSection === i
