@@ -29,9 +29,6 @@ body {
   color: var(--color-sapperton-green);
   margin-top: 2rem;
   margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid var(--color-sapperton-green);
-  position: relative;
 }
 .page-content h3 {
   font-size: 1.5rem;

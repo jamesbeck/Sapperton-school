@@ -186,7 +186,7 @@ export default async function EventDetailPage({
       {event.classes && event.classes.length > 0 && (
         <Container colour="green">
           <div className="flex flex-col gap-8">
-            <H2>Related Classes</H2>
+            <H2 className="text-white">Related Classes</H2>
             <div className="flex gap-8 justify-center flex-wrap">
               {event.classes.map((classItem) => {
                 const classData =

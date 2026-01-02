@@ -1,9 +1,19 @@
+import { cn } from "@/utils/cn";
 import { bodoniModa } from "../../fonts";
 
-export default function H2({ children }: { children: React.ReactNode }) {
+export default function H2({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
     <h2
-      className={`w-full text-center text-5xl font-birthstone ${bodoniModa.className}`}
+      className={cn(
+        `w-full text-center text-4xl font-birthstone text-sapperton-green ${bodoniModa.className}`,
+        className
+      )}
     >
       {children}
     </h2>

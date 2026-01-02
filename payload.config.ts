@@ -2,7 +2,10 @@
 import { s3Storage } from "@payloadcms/storage-s3";
 import { postgresAdapter } from "@payloadcms/db-postgres";
 import { payloadCloudPlugin } from "@payloadcms/payload-cloud";
-import { lexicalEditor } from "@payloadcms/richtext-lexical";
+import {
+  lexicalEditor,
+  HeadingFeature,
+} from "@payloadcms/richtext-lexical";
 import { nestedDocsPlugin } from "@payloadcms/plugin-nested-docs";
 import path from "path";
 import { buildConfig } from "payload";
@@ -63,7 +66,17 @@ export default buildConfig({
     Users,
   ],
   globals: [HeroWords, HeadteacherWelcome],
-  editor: lexicalEditor(),
+  editor: lexicalEditor({
+    features: ({ defaultFeatures }) =>
+      defaultFeatures.map((feature) => {
+        if (feature.key === "heading") {
+          return HeadingFeature({
+            enabledHeadingSizes: ["h2"],
+          });
+        }
+        return feature;
+      }),
+  }),
   secret: process.env.PAYLOAD_SECRET || "",
   typescript: {
     outputFile: path.resolve(dirname, "payload-types.ts"),

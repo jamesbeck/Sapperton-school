@@ -84,7 +84,7 @@ export default async function Home({}) {
       <Container colour="green">
         <div className="flex flex-col gap-8 items-center">
           <div className="flex flex-col gap-8">
-            <H2>Upcoming Events</H2>
+            <H2 className="text-white">Upcoming Events</H2>
             {upcomingEvents.docs.length > 0 ? (
               <ClassEvents events={upcomingEvents.docs} />
             ) : (

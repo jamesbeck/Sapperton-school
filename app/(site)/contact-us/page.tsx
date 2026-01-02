@@ -29,7 +29,7 @@ export default function ContactPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Contact Details */}
           <div className="flex flex-col gap-8">
-            <H2>Contact Information</H2>
+            <H2 className="text-white">Contact Information</H2>
 
             <div className="flex flex-col gap-6">
               <div className="flex items-start gap-4">
@@ -100,7 +100,7 @@ export default function ContactPage() {
 
           {/* Google Maps */}
           <div className="flex flex-col gap-4">
-            <H2>Find Us</H2>
+            <H2 className="text-white">Find Us</H2>
             <div className="w-full h-[400px] lg:h-full rounded-lg overflow-hidden shadow-lg">
               <iframe
                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3214.5936585490035!2d-2.0820948229024525!3d51.727928294568514!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4871123562e90e4b%3A0x6f739c7d886783a1!2sSapperton%20C%20of%20E%20Primary%20School!5e1!3m2!1sen!2suk!4v1759414089162!5m2!1sen!2suk"

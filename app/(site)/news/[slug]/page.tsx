@@ -102,7 +102,7 @@ export default async function NewsArticlePage({
       {galleryImages?.length > 0 && (
         <Container colour="green">
           <div className="flex flex-col gap-8">
-            <H2>Gallery</H2>
+            <H2 className="text-white">Gallery</H2>
             <ImageGallery images={galleryImages || []} />
           </div>
         </Container>
@@ -110,7 +110,9 @@ export default async function NewsArticlePage({
       {article.classes && article.classes.length > 0 && (
         <Container colour={galleryImages?.length > 0 ? "white" : "green"}>
           <div className="flex flex-col gap-8">
-            <H2>Related Classes</H2>
+            <H2 className={galleryImages?.length > 0 ? "" : "text-white"}>
+              Related Classes
+            </H2>
             <div className="flex gap-8 justify-center flex-wrap">
               {article.classes.map((classItem) => {
                 const classData =
@@ -134,7 +136,17 @@ export default async function NewsArticlePage({
           }
         >
           <div className="flex flex-col gap-8">
-            <H2>More News</H2>
+            <H2
+              className={
+                galleryImages?.length > 0 && article.classes?.length
+                  ? "text-white"
+                  : galleryImages?.length > 0 || article.classes?.length
+                    ? ""
+                    : "text-white"
+              }
+            >
+              More News
+            </H2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {otherArticles.docs.map((otherArticle) => (
                 <NewsCard

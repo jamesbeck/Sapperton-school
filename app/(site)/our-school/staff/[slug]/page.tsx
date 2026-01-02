@@ -113,7 +113,7 @@ export default async function StaffPage({
       <Container colour="green">
         {classesTaught.docs?.length > 0 && (
           <div className="flex flex-col gap-8">
-            <H2>Classes Taught</H2>
+            <H2 className="text-white">Classes Taught</H2>
             <div className="flex gap-8 justify-center">
               {classesTaught.docs?.map((taughtClass) => (
                 <ClassCard schoolClass={taughtClass} key={taughtClass.id} />

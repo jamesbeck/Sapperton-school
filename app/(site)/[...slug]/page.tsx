@@ -128,7 +128,7 @@ export default async function ContentPage({
       {galleryImages?.length > 0 && (
         <Container colour="green">
           <div className="flex flex-col gap-8">
-            <H2>Gallery</H2>
+            <H2 className="text-white">Gallery</H2>
             <ImageGallery images={galleryImages || []} />
           </div>
         </Container>
@@ -187,7 +187,17 @@ export default async function ContentPage({
           }
         >
           <div className="flex flex-col gap-8">
-            <H2>More from {parentName}</H2>
+            <H2
+              className={
+                galleryImages?.length > 0 && page.files?.length
+                  ? "text-white"
+                  : galleryImages?.length > 0 || page.files?.length
+                    ? ""
+                    : "text-white"
+              }
+            >
+              More from {parentName}
+            </H2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {siblingPages.map((sibling) => {
                 const siblingPage = sibling.page as Page;

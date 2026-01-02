@@ -157,7 +157,7 @@ export default async function StaffPage({
         <div className="flex flex-col gap-8 items-center">
           {!!schoolClass.primaryTeachers?.length && (
             <>
-              <H2>{schoolClass.name} Team</H2>
+              <H2 className="text-white">{schoolClass.name} Team</H2>
               <div className="flex flex-wrap justify-center gap-12">
                 {allTeachers?.map((staff, i) => (
                   <StaffCard staff={staff as Staff} key={i} />
@@ -180,7 +180,7 @@ export default async function StaffPage({
       <Container colour="green">
         <div className="flex flex-col gap-8 items-center">
           <div className="flex flex-col gap-8">
-            <H2>News Articles</H2>
+            <H2 className="text-white">News Articles</H2>
             {newsArticles.docs.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {newsArticles.docs.map((article) => (
