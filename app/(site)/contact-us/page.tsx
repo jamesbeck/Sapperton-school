@@ -119,7 +119,7 @@ export default function ContactPage() {
 
       {/* Contact Form Section */}
       <Container>
-        <div className="max-w-3xl mx-auto">
+        <div id="contact-form" className="max-w-3xl mx-auto scroll-mt-8">
           <div className="text-center mb-8">
             <H2>Send Us a Message</H2>
             <p className="text-gray-600 mt-4">

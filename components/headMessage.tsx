@@ -1,5 +1,6 @@
 "use client";
 import Container from "@/components/container";
+import Button from "@/components/ui/button";
 import { bodoniModa } from "../fonts";
 import Image from "next/image";
 import { AnimateIn } from "@/utils/animateIn";
@@ -79,6 +80,31 @@ export default function HeadMessage({
             </div>
             <div className="text-foreground text-lg text-center">
               {headteacherWelcome.name}
+            </div>
+          </AnimateIn>
+
+          {/* Call to Action - Book a Visit */}
+          <AnimateIn>
+            <div className="mt-16 bg-sapperton-green/10 rounded-xl p-8 md:p-12 text-center max-w-3xl mx-auto">
+              <h3
+                className={`text-2xl md:text-4xl text-sapperton-green ${bodoniModa.className} mb-4`}
+              >
+                Come and see us in action
+              </h3>
+              <p className="text-foreground text-lg mb-6 text-balance">
+                We&apos;d love to welcome you to Sapperton Church of England
+                Primary School. There&apos;s no better way to experience the
+                warmth and joy of our community than by visiting in person.
+                Please get in touch to arrange a visit — we can&apos;t wait to
+                meet you!
+              </p>
+              <div className="flex justify-center">
+                <Button
+                  label="Book a Visit"
+                  href="/contact-us#contact-form"
+                  buttonStyle="green"
+                />
+              </div>
             </div>
           </AnimateIn>
         </div>
