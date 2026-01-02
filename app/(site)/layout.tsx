@@ -7,6 +7,7 @@ import configPromise from "@payload-config";
 import { GroupedMenuItem } from "@/types";
 import { MenuItem, FooterMenuItem } from "@/payload-types";
 import Footer from "@/components/footer";
+import { Analytics } from "@vercel/analytics/react";
 
 // Revalidate menu structure every 30 seconds
 export const revalidate = 30;
@@ -122,6 +123,7 @@ export default async function RootLayout({
         />
         {children}
         <Footer />
+        <Analytics />
       </body>
     </html>
   );
