@@ -2,7 +2,13 @@
 import { Event, Class } from "@/payload-types";
 import EventCard from "@/components/eventCard";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { ChevronDown, Calendar as CalendarIcon, List } from "lucide-react";
+import {
+  ChevronDown,
+  Calendar as CalendarIcon,
+  List,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import { Calendar, dateFnsLocalizer, Views, View } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { enGB } from "date-fns/locale";
@@ -38,6 +44,14 @@ interface CalendarEvent {
 }
 
 type ViewType = "calendar" | "list";
+type EventType = "term-date" | "event" | "open-day" | "other";
+
+const EVENT_TYPES: { type: EventType; label: string }[] = [
+  { type: "term-date", label: "Term Dates" },
+  { type: "event", label: "Events" },
+  { type: "open-day", label: "Open Days" },
+  { type: "other", label: "Other" },
+];
 
 // Get background color for event type
 const getEventBackgroundColor = (type: string): string => {
@@ -76,11 +90,64 @@ export default function EventsCalendar({ events }: { events: Event[] }) {
   const [viewType, setViewType] = useState<ViewType>("calendar");
   const [calendarView, setCalendarView] = useState<View>(Views.MONTH);
   const [calendarDate, setCalendarDate] = useState<Date>(new Date());
+  const [hiddenTypes, setHiddenTypes] = useState<Set<EventType>>(new Set());
+  const [selectedClassId, setSelectedClassId] = useState<string>("");
   const dateRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
-  // Convert events to react-big-calendar format
+  // Extract unique classes from all events
+  const uniqueClasses = useMemo(() => {
+    const classMap = new Map<number, Class>();
+    events.forEach((event) => {
+      if (event.classes && event.classes.length > 0) {
+        event.classes.forEach((cls) => {
+          if (typeof cls !== "number" && cls.id) {
+            classMap.set(cls.id, cls as Class);
+          }
+        });
+      }
+    });
+    return Array.from(classMap.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  }, [events]);
+
+  // Toggle event type visibility
+  const toggleTypeVisibility = (type: EventType) => {
+    setHiddenTypes((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(type)) {
+        newSet.delete(type);
+      } else {
+        newSet.add(type);
+      }
+      return newSet;
+    });
+  };
+
+  // Filter events based on type visibility and class filter
+  const filteredEvents = useMemo(() => {
+    return events.filter((event) => {
+      // Check type visibility
+      if (hiddenTypes.has(event.type as EventType)) return false;
+      // Check class filter
+      if (selectedClassId) {
+        // Include events with no classes (whole-school events) as they apply to everyone
+        if (!event.classes || event.classes.length === 0) {
+          return true;
+        }
+        const matchesClass = event.classes.some((cls) => {
+          const classId = typeof cls === "number" ? cls : cls.id;
+          return classId.toString() === selectedClassId;
+        });
+        if (!matchesClass) return false;
+      }
+      return true;
+    });
+  }, [events, hiddenTypes, selectedClassId]);
+
+  // Convert filtered events to react-big-calendar format
   const calendarEvents: CalendarEvent[] = useMemo(() => {
-    return events.map((event) => {
+    return filteredEvents.map((event) => {
       const startDate = new Date(event.date);
       let endDate: Date;
 
@@ -118,7 +185,7 @@ export default function EventsCalendar({ events }: { events: Event[] }) {
         resource: event,
       };
     });
-  }, [events]);
+  }, [filteredEvents]);
 
   // Parse time string to hours and minutes
   function parseTime(timeStr: string): [number, number] {
@@ -142,31 +209,32 @@ export default function EventsCalendar({ events }: { events: Event[] }) {
     return [hours, minutes];
   }
 
-  // Group events by day for list view
-  const eventsByDay: EventsByDay = events.reduce((acc, event) => {
-    const dateKey = new Date(event.date).toISOString().split("T")[0];
-    if (!acc[dateKey]) {
-      acc[dateKey] = {
-        date: new Date(event.date),
-        events: [],
-      };
-    }
-    acc[dateKey].events.push(event);
-    return acc;
-  }, {} as EventsByDay);
+  // Group filtered events by day for list view
+  const eventsByDay: EventsByDay = useMemo(() => {
+    return filteredEvents.reduce((acc, event) => {
+      const dateKey = new Date(event.date).toISOString().split("T")[0];
+      if (!acc[dateKey]) {
+        acc[dateKey] = {
+          date: new Date(event.date),
+          events: [],
+        };
+      }
+      acc[dateKey].events.push(event);
+      return acc;
+    }, {} as EventsByDay);
+  }, [filteredEvents]);
 
   // Sort dates
   const sortedDates = Object.keys(eventsByDay).sort();
 
-  // Get unique months for filtering
-  const uniqueMonths = Array.from(
-    new Set(
-      sortedDates.map((dateKey) => {
-        const date = new Date(dateKey);
-        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-      })
-    )
-  );
+  // Get unique months for filtering (from all events, not filtered)
+  const uniqueMonths = useMemo(() => {
+    const allDates = events.map((event) => {
+      const date = new Date(event.date);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    });
+    return Array.from(new Set(allDates)).sort();
+  }, [events]);
 
   // Filter dates by selected month
   const filteredDates = selectedMonth
@@ -358,60 +426,94 @@ export default function EventsCalendar({ events }: { events: Event[] }) {
           )}
         </div>
 
-        {/* Legend for calendar view */}
-        {viewType === "calendar" && (
-          <div className="flex flex-wrap items-center gap-4 text-sm">
-            <span className="font-semibold text-gray-700">Legend:</span>
-            <div className="flex items-center gap-2">
-              <span
-                className="w-4 h-4 rounded"
-                style={{
-                  backgroundColor: getEventBackgroundColor("term-date"),
-                }}
-              />
-              <span>Term Dates</span>
+        {/* Class filter and type filter row */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          {/* Class filter */}
+          {uniqueClasses.length > 0 && (
+            <div className="flex items-center gap-2 shrink-0">
+              <label htmlFor="class-filter" className="text-sm font-semibold">
+                Class:
+              </label>
+              <div className="relative">
+                <select
+                  id="class-filter"
+                  value={selectedClassId}
+                  onChange={(e) => setSelectedClassId(e.target.value)}
+                  className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-sapperton-green focus:border-transparent"
+                >
+                  <option value="">Any Class</option>
+                  {uniqueClasses.map((cls) => (
+                    <option key={cls.id} value={cls.id.toString()}>
+                      {cls.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+              </div>
+              {selectedClassId && (
+                <button
+                  onClick={() => setSelectedClassId("")}
+                  className="text-sm text-sapperton-green hover:underline"
+                >
+                  Clear
+                </button>
+              )}
             </div>
-            <div className="flex items-center gap-2">
-              <span
-                className="w-4 h-4 rounded"
-                style={{ backgroundColor: getEventBackgroundColor("event") }}
-              />
-              <span>Events</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span
-                className="w-4 h-4 rounded"
-                style={{ backgroundColor: getEventBackgroundColor("open-day") }}
-              />
-              <span>Open Days</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span
-                className="w-4 h-4 rounded"
-                style={{ backgroundColor: getEventBackgroundColor("other") }}
-              />
-              <span>Other</span>
-            </div>
-          </div>
-        )}
+          )}
 
-        {/* Date quick navigation - only in list view */}
-        {viewType === "list" && filteredDates.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            <span className="text-sm font-semibold text-gray-700">
-              Jump to:
+          {/* Divider - only on desktop when class filter is visible */}
+          {uniqueClasses.length > 0 && (
+            <div className="hidden sm:block w-px h-6 bg-gray-300" />
+          )}
+
+          {/* Interactive Legend - click to show/hide event types */}
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="font-semibold text-gray-700 mr-2">
+              Filter by type:
             </span>
-            {filteredDates.map((dateKey) => (
+            {EVENT_TYPES.map(({ type, label }) => {
+              const isHidden = hiddenTypes.has(type);
+              return (
+                <button
+                  key={type}
+                  onClick={() => toggleTypeVisibility(type)}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${
+                    isHidden
+                      ? "bg-gray-100 border-gray-300 opacity-50"
+                      : "bg-white border-gray-300 hover:border-gray-400"
+                  }`}
+                  title={isHidden ? `Show ${label}` : `Hide ${label}`}
+                >
+                  <span
+                    className="w-3 h-3 rounded-sm"
+                    style={{
+                      backgroundColor: getEventBackgroundColor(type),
+                      opacity: isHidden ? 0.4 : 1,
+                    }}
+                  />
+                  <span
+                    className={isHidden ? "line-through text-gray-400" : ""}
+                  >
+                    {label}
+                  </span>
+                  {isHidden ? (
+                    <EyeOff className="w-3.5 h-3.5 text-gray-400" />
+                  ) : (
+                    <Eye className="w-3.5 h-3.5 text-gray-500" />
+                  )}
+                </button>
+              );
+            })}
+            {hiddenTypes.size > 0 && (
               <button
-                key={dateKey}
-                onClick={() => scrollToDate(dateKey)}
-                className="text-xs px-3 py-1 bg-gray-100 hover:bg-sapperton-green hover:text-white rounded-full transition-colors"
+                onClick={() => setHiddenTypes(new Set())}
+                className="text-sm text-sapperton-green hover:underline ml-2"
               >
-                {formatDateForNav(dateKey)}
+                Show all
               </button>
-            ))}
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* Calendar View */}
@@ -422,7 +524,7 @@ export default function EventsCalendar({ events }: { events: Event[] }) {
             events={calendarEvents}
             startAccessor="start"
             endAccessor="end"
-            style={{ height: 700 }}
+            style={{ height: "auto", minHeight: 700 }}
             view={calendarView}
             onView={handleViewChange}
             date={calendarDate}
@@ -432,9 +534,10 @@ export default function EventsCalendar({ events }: { events: Event[] }) {
               event: EventComponent,
             }}
             onSelectEvent={handleSelectEvent}
-            views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]}
+            views={[Views.MONTH, Views.WEEK, Views.DAY]}
             popup
             selectable={false}
+            showAllEvents
           />
         </div>
       )}
