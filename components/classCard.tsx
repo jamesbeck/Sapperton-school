@@ -47,7 +47,7 @@ export default function ClassCard({ schoolClass }: { schoolClass: Class }) {
 
           <div className="flex flex-col items-center">
             <div className="text-xl text-center ">{schoolClass.name}</div>
-            <div className="text-center text-sm">Years {schoolClass.years}</div>
+            <div className="text-center text-sm">{schoolClass.years}</div>
           </div>
         </div>
       </HoverScale>
