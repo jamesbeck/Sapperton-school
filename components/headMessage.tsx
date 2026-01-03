@@ -5,6 +5,7 @@ import { bodoniModa } from "../fonts";
 import Image from "next/image";
 import { AnimateIn } from "@/utils/animateIn";
 import { HeadteacherWelcome, Media } from "@/payload-types";
+import { useState, useRef, useEffect } from "react";
 
 export default function HeadMessage({
   headteacherWelcome,
@@ -12,6 +13,23 @@ export default function HeadMessage({
   headteacherWelcome: HeadteacherWelcome;
 }) {
   const image = headteacherWelcome.image as Media;
+  const [isExpanded, setIsExpanded] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [contentHeight, setContentHeight] = useState(0);
+
+  // Split body into paragraphs (separated by double newlines or single newlines)
+  const paragraphs = headteacherWelcome.body
+    .split(/\n\n|\n/)
+    .filter((p) => p.trim());
+  const firstTwoParagraphs = paragraphs.slice(0, 2).join("<br /><br />");
+  const remainingParagraphs = paragraphs.slice(2).join("<br /><br />");
+  const hasMoreContent = paragraphs.length > 2;
+
+  useEffect(() => {
+    if (contentRef.current) {
+      setContentHeight(contentRef.current.scrollHeight);
+    }
+  }, [remainingParagraphs]);
 
   return (
     <div id="head-message">
@@ -55,14 +73,44 @@ export default function HeadMessage({
 
             <div className="text-center text-pretty flex-1/2">
               <AnimateIn>
-                {/* convert new lines into br */}
+                {/* First two paragraphs - always visible */}
                 <div
-                  className="pb-8"
+                  className="pb-4"
                   dangerouslySetInnerHTML={{
-                    __html: headteacherWelcome.body.replace(/\n/g, "<br />"),
+                    __html: firstTwoParagraphs,
                   }}
                 />
-                <div>
+
+                {/* Remaining paragraphs - collapsible with animation */}
+                {hasMoreContent && (
+                  <>
+                    <div
+                      className="overflow-hidden transition-all duration-500 ease-in-out"
+                      style={{
+                        maxHeight: isExpanded ? `${contentHeight}px` : "0px",
+                        opacity: isExpanded ? 1 : 0,
+                      }}
+                    >
+                      <div ref={contentRef}>
+                        <div
+                          className="pb-4"
+                          dangerouslySetInnerHTML={{
+                            __html: remainingParagraphs,
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => setIsExpanded(!isExpanded)}
+                      className="text-sapperton-green hover:text-sapperton-green/80 font-medium transition-colors duration-200 mb-4 cursor-pointer"
+                    >
+                      {isExpanded ? "Read less ↑" : "Read more ↓"}
+                    </button>
+                  </>
+                )}
+
+                <div className="pt-4">
                   <b>{headteacherWelcome.name}</b>
                   <br />
                   {headteacherWelcome.jobTitle}
