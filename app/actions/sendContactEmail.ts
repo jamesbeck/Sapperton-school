@@ -51,8 +51,9 @@ export async function sendContactEmail(
 
     // Prepare email content
     const msg = {
-      to: "admin@sapperton.gloucs.sch.uk",
-      from: "sappertonwebsite@jamesbeck.co.uk",
+      to: [{ email: "admin@sapperton.gloucs.sch.uk" }],
+      bcc: [{ email: "james@jamesbeck.co.uk" }],
+      from: "website@sappertonschool.org",
       subject: "Website enquiry",
       text: `
 Name: ${data.name}
