@@ -170,7 +170,7 @@ export default function Header({
                   <div className="flex flex-col gap-2 md:flex-row md:gap-8">
                     {footerMenuItems.map((item, i) => (
                       <div key={i}>
-                        <Link href={item.href}>
+                        <Link href={item.href} onClick={() => setOpen(false)}>
                           <div
                             className={cn(
                               " text-sm border-white border-b-1 p-1"
@@ -185,6 +185,7 @@ export default function Header({
                               key={j}
                               href={child.href}
                               className="hover:underline"
+                              onClick={() => setOpen(false)}
                             >
                               <div className={cn("text-xs pl-1")}>
                                 {child.title}
