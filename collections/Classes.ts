@@ -11,6 +11,15 @@ export const Classes: CollectionConfig = {
   },
   fields: [
     {
+      name: "order",
+      type: "number",
+      defaultValue: 0,
+      admin: {
+        description:
+          "Used to order classes in menus and lists. Lower numbers appear first.",
+      },
+    },
+    {
       name: "name",
       type: "text",
       required: true,

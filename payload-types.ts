@@ -338,6 +338,10 @@ export interface StaffGroup {
  */
 export interface Class {
   id: number;
+  /**
+   * Used to order classes in menus and lists. Lower numbers appear first.
+   */
+  order?: number | null;
   name: string;
   slug?: string | null;
   years: string;
@@ -665,6 +669,7 @@ export interface StaffGroupsSelect<T extends boolean = true> {
  * via the `definition` "classes_select".
  */
 export interface ClassesSelect<T extends boolean = true> {
+  order?: T;
   name?: T;
   slug?: T;
   years?: T;

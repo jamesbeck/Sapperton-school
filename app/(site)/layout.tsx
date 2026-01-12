@@ -36,8 +36,7 @@ export default async function RootLayout({
     collection: "classes",
     depth: 1,
     limit: 1000,
-    sort: ["name", "order", "id"],
-    // id: "507f1f77bcf86cd799439011",
+    sort: "order",
   });
 
   const footerMenuItems = await payload.find({
