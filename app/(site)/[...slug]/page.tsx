@@ -138,40 +138,46 @@ export default async function ContentPage({
           <div className="flex flex-col gap-8">
             <H2 className="text-white">File Downloads</H2>
             <div className="flex flex-col gap-3 max-w-3xl mx-auto">
-              {page.files?.map((file) => {
-                const media = file as Media;
-                const extension =
-                  media.filename?.split(".").pop()?.toLowerCase() || "";
-                return (
-                  <Link
-                    key={media.id}
-                    href={media.url || ""}
-                    target="_blank"
-                    className="group flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-all hover:border-sapperton-green"
-                  >
-                    <div className="flex-shrink-0 w-12 h-12">
-                      <FileIcon
-                        extension={extension}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        {...(defaultStyles as any)[extension]}
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-gray-900 group-hover:text-sapperton-green transition-colors truncate">
-                        {media.filename}
+              {[...page.files]
+                .sort((a, b) => {
+                  const nameA = (a as Media).filename?.toLowerCase() || "";
+                  const nameB = (b as Media).filename?.toLowerCase() || "";
+                  return nameA.localeCompare(nameB);
+                })
+                .map((file) => {
+                  const media = file as Media;
+                  const extension =
+                    media.filename?.split(".").pop()?.toLowerCase() || "";
+                  return (
+                    <Link
+                      key={media.id}
+                      href={media.url || ""}
+                      target="_blank"
+                      className="group flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-all hover:border-sapperton-green"
+                    >
+                      <div className="flex-shrink-0 w-12 h-12">
+                        <FileIcon
+                          extension={extension}
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          {...(defaultStyles as any)[extension]}
+                        />
                       </div>
-                      {media.alt && (
-                        <div className="text-sm text-gray-600 line-clamp-1">
-                          {media.alt}
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-gray-900 group-hover:text-sapperton-green transition-colors truncate">
+                          {media.filename}
                         </div>
-                      )}
-                    </div>
-                    <div className="flex-shrink-0 text-xs text-gray-500 font-medium bg-gray-100 px-3 py-1 rounded-full">
-                      {Math.round((media.filesize || 0) / 1024)} KB
-                    </div>
-                  </Link>
-                );
-              })}
+                        {media.alt && (
+                          <div className="text-sm text-gray-600 line-clamp-1">
+                            {media.alt}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-shrink-0 text-xs text-gray-500 font-medium bg-gray-100 px-3 py-1 rounded-full">
+                        {Math.round((media.filesize || 0) / 1024)} KB
+                      </div>
+                    </Link>
+                  );
+                })}
             </div>
           </div>
         </Container>

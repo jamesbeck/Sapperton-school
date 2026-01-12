@@ -84,6 +84,40 @@ export default function ContactPage() {
 
               <div className="flex items-start gap-4">
                 <div className="bg-white/20 rounded-full p-3 flex-shrink-0">
+                  <Mail className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg mb-1">
+                    SENDCo - Charlotte Preece
+                  </h3>
+                  <a
+                    href="mailto:sendco@sapperton.gloucs.sch.uk"
+                    className="text-white/90 hover:text-white transition-colors break-all"
+                  >
+                    sendco@sapperton.gloucs.sch.uk
+                  </a>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4">
+                <div className="bg-white/20 rounded-full p-3 flex-shrink-0">
+                  <Mail className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg mb-1">
+                    Executive Head - Helen Cooper
+                  </h3>
+                  <a
+                    href="mailto:head@sapperton.gloucs.sch.uk"
+                    className="text-white/90 hover:text-white transition-colors break-all"
+                  >
+                    head@sapperton.gloucs.sch.uk
+                  </a>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4">
+                <div className="bg-white/20 rounded-full p-3 flex-shrink-0">
                   <Clock className="w-6 h-6" />
                 </div>
                 <div className="text-left">
