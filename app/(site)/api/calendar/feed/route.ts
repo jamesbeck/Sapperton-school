@@ -46,7 +46,7 @@ function escapeICSText(text: string): string {
 }
 
 function extractPlainText(
-  richText: Record<string, unknown> | null | undefined
+  richText: Record<string, unknown> | null | undefined,
 ): string {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const root = richText as any;
@@ -81,7 +81,9 @@ function getCategoryLabel(type: string): string {
     case "term-date":
       return "Term Date";
     case "event":
-      return "School Event";
+      return "Curriculum Events";
+    case "extracurricular":
+      return "Extracurricular Events";
     case "open-day":
       return "Open Day";
     case "other":
@@ -190,7 +192,7 @@ export async function GET(request: NextRequest) {
       "DTSTART:19701025T020000",
       "RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU",
       "END:STANDARD",
-      "END:VTIMEZONE"
+      "END:VTIMEZONE",
     );
 
     for (const event of events) {
@@ -237,7 +239,7 @@ export async function GET(request: NextRequest) {
       if (event.classes && event.classes.length > 0) {
         const classNames = event.classes
           .map((cls) =>
-            typeof cls === "object" && cls !== null ? cls.name : ""
+            typeof cls === "object" && cls !== null ? cls.name : "",
           )
           .filter(Boolean);
         if (classNames.length > 0) {
@@ -256,10 +258,10 @@ export async function GET(request: NextRequest) {
         lines.push(`DTEND;VALUE=DATE:${formatDateToICS(endDate, true)}`);
       } else {
         lines.push(
-          `DTSTART;TZID=Europe/London:${formatDateToICS(startDate).slice(0, -1)}`
+          `DTSTART;TZID=Europe/London:${formatDateToICS(startDate).slice(0, -1)}`,
         );
         lines.push(
-          `DTEND;TZID=Europe/London:${formatDateToICS(endDate).slice(0, -1)}`
+          `DTEND;TZID=Europe/London:${formatDateToICS(endDate).slice(0, -1)}`,
         );
       }
 
@@ -293,7 +295,7 @@ export async function GET(request: NextRequest) {
     console.error("Error generating calendar feed:", error);
     return NextResponse.json(
       { error: "Failed to generate calendar feed" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

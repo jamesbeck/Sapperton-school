@@ -61,8 +61,12 @@ export const Events: CollectionConfig = {
           value: "term-date",
         },
         {
-          label: "Event",
+          label: "Curriculum Events",
           value: "event",
+        },
+        {
+          label: "Extracurricular Events",
+          value: "extracurricular",
         },
         {
           label: "Open Day",

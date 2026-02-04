@@ -27,7 +27,9 @@ export default function EventCard({ event }: { event: Event }) {
       case "term-date":
         return "Term Date";
       case "event":
-        return "Event";
+        return "Curriculum Events";
+      case "extracurricular":
+        return "Extracurricular Events";
       case "open-day":
         return "Open Day";
       case "other":
@@ -43,6 +45,8 @@ export default function EventCard({ event }: { event: Event }) {
         return "bg-blue-100 text-blue-800";
       case "event":
         return "bg-green-100 text-green-800";
+      case "extracurricular":
+        return "bg-amber-100 text-amber-800";
       case "open-day":
         return "bg-purple-100 text-purple-800";
       case "other":
@@ -132,7 +136,7 @@ export default function EventCard({ event }: { event: Event }) {
               </h3>
               <span
                 className={`flex-shrink-0 text-xs font-semibold px-2 py-1 rounded ${getCategoryColor(
-                  event.type
+                  event.type,
                 )}`}
               >
                 {getCategoryLabel(event.type)}

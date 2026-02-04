@@ -414,7 +414,7 @@ export interface Event {
    * e.g., 15:30 or 3:30 PM
    */
   endTime?: string | null;
-  type: 'term-date' | 'event' | 'open-day' | 'other';
+  type: 'term-date' | 'event' | 'extracurricular' | 'open-day' | 'other';
   /**
    * Only add classes if this event is specific to certain classes. Leave empty for whole-school events.
    */

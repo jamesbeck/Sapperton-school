@@ -47,11 +47,17 @@ interface CalendarEvent {
 }
 
 type ViewType = "calendar" | "list";
-type EventType = "term-date" | "event" | "open-day" | "other";
+type EventType =
+  | "term-date"
+  | "event"
+  | "extracurricular"
+  | "open-day"
+  | "other";
 
 const EVENT_TYPES: { type: EventType; label: string }[] = [
   { type: "term-date", label: "Term Dates" },
-  { type: "event", label: "Events" },
+  { type: "event", label: "Curriculum Events" },
+  { type: "extracurricular", label: "Extracurricular Events" },
   { type: "open-day", label: "Open Days" },
   { type: "other", label: "Other" },
 ];
@@ -63,6 +69,8 @@ const getEventBackgroundColor = (type: string): string => {
       return "#3b82f6"; // blue-500
     case "event":
       return "#347560"; // sapperton-green
+    case "extracurricular":
+      return "#d97706"; // amber-600
     case "open-day":
       return "#8b5cf6"; // purple-500
     case "other":
@@ -79,6 +87,8 @@ const getEventBorderColor = (type: string): string => {
       return "#1d4ed8"; // blue-700
     case "event":
       return "#1f4d3a"; // darker sapperton-green
+    case "extracurricular":
+      return "#b45309"; // amber-700
     case "open-day":
       return "#6d28d9"; // purple-700
     case "other":
@@ -103,7 +113,7 @@ export default function EventsCalendar({ events }: { events: Event[] }) {
   const [hiddenTypes, setHiddenTypes] = useState<Set<EventType>>(new Set());
   const [selectedClassId, setSelectedClassId] = useState<string>("");
   const [subscribeClassIds, setSubscribeClassIds] = useState<Set<number>>(
-    new Set()
+    new Set(),
   );
   const dateRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
@@ -145,7 +155,7 @@ export default function EventsCalendar({ events }: { events: Event[] }) {
       }
     });
     return Array.from(classMap.values()).sort((a, b) =>
-      a.name.localeCompare(b.name)
+      a.name.localeCompare(b.name),
     );
   }, [events]);
 
@@ -562,7 +572,7 @@ export default function EventsCalendar({ events }: { events: Event[] }) {
                       <button
                         onClick={() => {
                           navigator.clipboard.writeText(
-                            getSubscriptionUrls.feedUrl
+                            getSubscriptionUrls.feedUrl,
                           );
                           setCopied(true);
                           setTimeout(() => setCopied(false), 2000);
