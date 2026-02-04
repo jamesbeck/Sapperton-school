@@ -17,8 +17,8 @@ export default function BookAVisit() {
             </h3>
             <p className="text-foreground text-lg text-balance">
               We&apos;d love to welcome you to Sapperton Primary School.
-              There&apos;s no better way to experience the warmth and joy of
-              our community than by visiting in person. Please get in touch to
+              There&apos;s no better way to experience the warmth and joy of our
+              community than by visiting in person. Please get in touch to
               arrange a visit - we can&apos;t wait to meet you!
             </p>
             <div className="flex justify-center">
