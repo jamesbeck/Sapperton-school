@@ -1,6 +1,6 @@
 import Hero from "@/components/hero";
 import HeadMessage from "@/components/headMessage";
-import ExecHeadQuote from "@/components/execHeadQuote";
+import BookAVisit from "@/components/bookAVisit";
 import OpenDays from "@/components/openDays";
 import LatestNews from "@/components/latestNews";
 import Container from "@/components/container";
@@ -78,7 +78,7 @@ export default async function Home({}) {
     <div>
       <Hero words={heroWords} openDays={openDaysResult.docs} />
       <HeadMessage headteacherWelcome={headteacherWelcome} />
-      <ExecHeadQuote />
+      <BookAVisit />
       <VideoSection />
       <LatestNews newsArticles={latestNews.docs} />
       <Container colour="green">

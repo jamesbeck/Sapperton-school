@@ -1,15 +1,13 @@
 "use client";
-import Container from "@/components/container";
 import { bodoniModa } from "../fonts";
 import Image from "next/image";
 import { AnimateIn } from "@/utils/animateIn";
 
 export default function ExecHeadQuote() {
   return (
-    <div className="bg-sapperton-green/5">
-      <Container>
-        <AnimateIn>
-          <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
+    <AnimateIn>
+      <div className="bg-sapperton-green/10 rounded-xl p-8 md:p-12 max-w-5xl mx-auto">
+        <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
             <div className="shrink-0">
               <Image
                 src="/execHead.jpg"
@@ -39,8 +37,7 @@ export default function ExecHeadQuote() {
               </div>
             </div>
           </div>
-        </AnimateIn>
-      </Container>
-    </div>
+        </div>
+      </AnimateIn>
   );
 }
