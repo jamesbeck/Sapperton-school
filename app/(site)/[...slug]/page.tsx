@@ -125,14 +125,6 @@ export default async function ContentPage({
           <RichText data={page.body} className="page-content" />
         </div>
       </Container>
-      {galleryImages?.length > 0 && (
-        <Container colour="green">
-          <div className="flex flex-col gap-8">
-            <H2 className="text-white">Gallery</H2>
-            <ImageGallery images={galleryImages || []} />
-          </div>
-        </Container>
-      )}
       {!!page.files?.length && (
         <Container colour="green">
           <div className="flex flex-col gap-8">
@@ -179,6 +171,14 @@ export default async function ContentPage({
                   );
                 })}
             </div>
+          </div>
+        </Container>
+      )}
+      {galleryImages?.length > 0 && (
+        <Container colour="green">
+          <div className="flex flex-col gap-8">
+            <H2 className="text-white">Gallery</H2>
+            <ImageGallery images={galleryImages || []} />
           </div>
         </Container>
       )}
