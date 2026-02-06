@@ -46,6 +46,18 @@ export default function Footer() {
                 <Mail className="w-5 h-5 flex-shrink-0" />
                 <span>admin@sapperton.gloucs.sch.uk</span>
               </a>
+              <div className="flex items-start gap-3">
+                <Mail className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                <div>
+                  <div className="font-semibold">SENDCo - Charlotte Preece</div>
+                  <a
+                    href="mailto:sendco@sapperton.gloucs.sch.uk"
+                    className="hover:text-white transition-colors"
+                  >
+                    sendco@sapperton.gloucs.sch.uk
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
 
