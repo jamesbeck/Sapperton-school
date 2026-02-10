@@ -232,7 +232,7 @@ function LogoAndMenuButton({
                 />
                 <p
                   className={cn(
-                    "text-white text-base md:text-xl italic tracking-wide ml-0.5",
+                    "text-white text-lg md:text-2xl italic tracking-wide ml-0.5",
                     bodoniModa.className,
                   )}
                 >
