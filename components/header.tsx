@@ -42,8 +42,8 @@ export default function Header({
     setVh(
       Math.max(
         document.documentElement.clientHeight || 0,
-        window.innerHeight || 0
-      )
+        window.innerHeight || 0,
+      ),
     );
   }, []);
 
@@ -70,7 +70,7 @@ export default function Header({
           >
             <LogoAndMenuButton logoOpacity={1} open={true} setOpen={setOpen} />
 
-            <div className="w-full h-full bg-sapperton-green p-8 pt-24 md:pt-32 md:px-16 overflow-scroll text-white ">
+            <div className="w-full h-full bg-sapperton-green p-8 pt-32 md:pt-40 md:px-16 overflow-scroll text-white ">
               <div className="w-full mx-auto max-w-7xl min-h-full md:h-full py-4">
                 <div className="flex flex-col space-y-8 w-full min-h-full">
                   <div className="flex-1 flex items-center">
@@ -82,7 +82,7 @@ export default function Header({
                               "flex items-center justify-between text-2xl border-white p-2 group duration-300",
                               i == 0 ? "border-t-0" : "border-t-2",
                               openSection === i ? "" : "hover:pl-4",
-                              bodoniModa.className
+                              bodoniModa.className,
                             )}
                             onClick={() =>
                               openSection === i
@@ -95,7 +95,7 @@ export default function Header({
                               size={32}
                               className={cn(
                                 "group-hover:rotate-90 transition-transform duration-300",
-                                openSection === i ? "rotate-90" : ""
+                                openSection === i ? "rotate-90" : "",
                               )}
                             />
                           </div>
@@ -173,7 +173,7 @@ export default function Header({
                         <Link href={item.href} onClick={() => setOpen(false)}>
                           <div
                             className={cn(
-                              " text-sm border-white border-b-1 p-1"
+                              " text-sm border-white border-b-1 p-1",
                             )}
                           >
                             {item.title}
@@ -221,14 +221,24 @@ function LogoAndMenuButton({
         <AnimatePresence>
           <motion.div style={{ opacity: logoOpacity }}>
             <Link href="/" className="block select-none" draggable="false">
-              <Image
-                src="/logo.png"
-                alt="Logo"
-                width={400}
-                height={120}
-                className="w-auto h-16 md:h-24 pointer-events-none"
-                draggable="false"
-              />
+              <div className="flex flex-col items-start gap-1 md:gap-2">
+                <Image
+                  src="/logo.png"
+                  alt="Logo"
+                  width={400}
+                  height={120}
+                  className="w-auto h-16 md:h-24 pointer-events-none"
+                  draggable="false"
+                />
+                <p
+                  className={cn(
+                    "text-white text-base md:text-xl italic tracking-wide ml-0.5",
+                    bodoniModa.className,
+                  )}
+                >
+                  to nurture faith; to inspire success
+                </p>
+              </div>
             </Link>
           </motion.div>
         </AnimatePresence>
