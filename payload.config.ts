@@ -74,7 +74,7 @@ export default buildConfig({
               "superscript",
               "subscript",
               "strikethrough",
-            ].includes(feature.key)
+            ].includes(feature.key),
         )
         .map((feature) => {
           if (feature.key === "heading") {
@@ -107,7 +107,7 @@ export default buildConfig({
     }),
 
     s3Storage({
-      clientUploads: true,
+      clientUploads: false,
       acl: "public-read",
       // signedDownloads: true,
       collections: {
