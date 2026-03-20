@@ -72,7 +72,9 @@ async function main() {
       id: 36,
     });
     if (menuItem) {
-      console.log(`Menu item 36 exists: "${menuItem.title}", updating page reference...`);
+      console.log(
+        `Menu item 36 exists: "${menuItem.title}", updating page reference...`,
+      );
       await payload.update({
         collection: "menuItems",
         id: 36,
@@ -83,13 +85,19 @@ async function main() {
       console.log("Menu item updated to point to new page.");
     }
   } catch {
-    console.log("Menu item 36 not found. You may need to recreate it manually in the admin panel.");
-    console.log("It should be under 'Parents' with slug 'letters' pointing to this page.");
+    console.log(
+      "Menu item 36 not found. You may need to recreate it manually in the admin panel.",
+    );
+    console.log(
+      "It should be under 'Parents' with slug 'letters' pointing to this page.",
+    );
   }
 
   console.log("\nRecovery complete!");
   console.log(`New page ID: ${page.id}`);
-  console.log("If the menu item was also deleted, recreate it in the admin panel:");
+  console.log(
+    "If the menu item was also deleted, recreate it in the admin panel:",
+  );
   console.log("  - Parent: Parents");
   console.log("  - Title: Letters");
   console.log("  - Slug: letters");
