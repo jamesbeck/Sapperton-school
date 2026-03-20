@@ -5,7 +5,8 @@ import Image from "next/image";
 import { AnimateIn } from "@/utils/animateIn";
 import { HeadteacherWelcome, Media } from "@/payload-types";
 import { useState, useRef, useEffect } from "react";
-import ExecHeadQuote from "@/components/execHeadQuote";
+import Link from "next/link";
+import { ExternalLink } from "lucide-react";
 
 export default function HeadMessage({
   headteacherWelcome,
@@ -57,17 +58,59 @@ export default function HeadMessage({
         <div className="flex flex-col justify-center gap-8 md:gap-16">
           <div className="flex flex-col md:flex-row  md:p-0 gap-8 md:gap-16 justify-between">
             <div className="flex-1/2">
-              <AnimateIn className="w-full h-[500px] relative">
-                <Image
-                  src={image?.url || ""}
-                  alt="Head Message"
-                  width={1000}
-                  height={600}
-                  className="rounded-md shadow-lg/50 shadow-foreground object-cover w-full h-full"
-                  style={{
-                    objectPosition: `${image?.focalX}% ${image?.focalY}%`,
-                  }}
-                />
+              <AnimateIn className="w-full">
+                <div className="flex flex-row gap-6 justify-center">
+                  {/* Mrs Crampton */}
+                  <Link
+                    href="/our-school/staff/mrs-meg-crampton"
+                    className="flex flex-col items-center flex-1 group"
+                  >
+                    <div className="relative w-full h-[300px] md:h-[400px] overflow-hidden rounded-lg">
+                      <Image
+                        src={image?.url || ""}
+                        alt={headteacherWelcome.name}
+                        width={500}
+                        height={600}
+                        className="rounded-lg shadow-lg object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
+                        style={{
+                          objectPosition: `${image?.focalX}% ${image?.focalY}%`,
+                        }}
+                      />
+                    </div>
+                    <div className="mt-4 text-center">
+                      <p className="font-semibold text-lg group-hover:text-sapperton-green transition-colors">
+                        {headteacherWelcome.name}
+                      </p>
+                      <p className="text-foreground/70 text-sm">
+                        {headteacherWelcome.jobTitle}
+                      </p>
+                    </div>
+                  </Link>
+
+                  {/* Helen Cooper */}
+                  <Link
+                    href="/our-school/staff/mrs-helen-cooper"
+                    className="flex flex-col items-center flex-1 group"
+                  >
+                    <div className="relative w-full h-[300px] md:h-[400px] overflow-hidden rounded-lg">
+                      <Image
+                        src="/execHead.jpg"
+                        alt="Helen Cooper"
+                        width={500}
+                        height={600}
+                        className="rounded-lg shadow-lg object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
+                      />
+                    </div>
+                    <div className="mt-4 text-center">
+                      <p className="font-semibold text-lg group-hover:text-sapperton-green transition-colors">
+                        Helen Cooper
+                      </p>
+                      <p className="text-foreground/70 text-sm">
+                        Executive Headteacher
+                      </p>
+                    </div>
+                  </Link>
+                </div>
               </AnimateIn>
             </div>
 
@@ -131,8 +174,31 @@ export default function HeadMessage({
             </div>
           </AnimateIn>
 
-          {/* Executive Headteacher Quote */}
-          <ExecHeadQuote />
+          {/* Powell's School Partnership */}
+          <AnimateIn>
+            <div className="bg-sapperton-green/10 rounded-xl p-8 md:p-12 max-w-3xl mx-auto text-center">
+              <h3
+                className={`text-2xl md:text-3xl text-sapperton-green ${bodoniModa.className} mb-4`}
+              >
+                Our Partner School
+              </h3>
+              <p className="text-foreground/80 mb-6 text-balance leading-relaxed">
+                Sapperton Church of England Primary School works in partnership
+                with Powell&apos;s Church of England Primary School, sharing
+                leadership and a commitment to providing an outstanding
+                education for every child.
+              </p>
+              <Link
+                href="https://www.powells.gloucs.sch.uk"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-sapperton-green text-white rounded-lg font-semibold hover:bg-sapperton-green/90 transition-colors"
+              >
+                Visit Powell&apos;s School
+                <ExternalLink className="w-4 h-4" />
+              </Link>
+            </div>
+          </AnimateIn>
         </div>
       </Container>
     </div>
