@@ -14,6 +14,12 @@ export default function HeadMessage({
   headteacherWelcome: HeadteacherWelcome;
 }) {
   const image = headteacherWelcome.image as Media;
+
+  // Strip title prefix (e.g. "Mrs ", "Mr ", "Dr ") for consistency
+  const stripTitle = (name: string) =>
+    name.replace(/^(Mrs|Mr|Ms|Miss|Dr|Rev)\.?\s+/i, "");
+  const displayName = stripTitle(headteacherWelcome.name);
+
   const [isExpanded, setIsExpanded] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const [contentHeight, setContentHeight] = useState(0);
@@ -50,7 +56,7 @@ export default function HeadMessage({
           >
             A warm welcome from our <br />
             <span className={`text-sapperton-green italic `}>
-              {headteacherWelcome.jobTitle}
+              leadership team
             </span>
           </h2>
         </AnimateIn>
@@ -60,7 +66,7 @@ export default function HeadMessage({
             <div className="flex-1/2">
               <AnimateIn className="w-full">
                 <div className="flex flex-row gap-6 justify-center">
-                  {/* Mrs Crampton */}
+                  {/* Meg Crampton */}
                   <Link
                     href="/our-school/staff/mrs-meg-crampton"
                     className="flex flex-col items-center flex-1 group"
@@ -68,7 +74,7 @@ export default function HeadMessage({
                     <div className="relative w-full h-[300px] md:h-[400px] overflow-hidden rounded-lg">
                       <Image
                         src={image?.url || ""}
-                        alt={headteacherWelcome.name}
+                        alt={displayName}
                         width={500}
                         height={600}
                         className="rounded-lg shadow-lg object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
@@ -79,7 +85,7 @@ export default function HeadMessage({
                     </div>
                     <div className="mt-4 text-center">
                       <p className="font-semibold text-lg group-hover:text-sapperton-green transition-colors">
-                        {headteacherWelcome.name}
+                        {displayName}
                       </p>
                       <p className="text-foreground/70 text-sm">
                         {headteacherWelcome.jobTitle}
@@ -154,7 +160,7 @@ export default function HeadMessage({
                 )}
 
                 <div className="pt-4">
-                  <b>{headteacherWelcome.name}</b>
+                  <b>{displayName}</b>
                   <br />
                   {headteacherWelcome.jobTitle}
                 </div>
@@ -170,7 +176,7 @@ export default function HeadMessage({
               <div className="text-7xl  text-right">&rdquo;</div>
             </div>
             <div className="text-foreground text-lg text-center">
-              {headteacherWelcome.name}
+              {displayName}
             </div>
           </AnimateIn>
 
