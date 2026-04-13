@@ -7,6 +7,7 @@ import { Staff, Media } from "@/payload-types";
 import StaffCard from "@/components/staffCard";
 import NewsCard from "@/components/newsCard";
 import ClassEvents from "@/components/classEvents";
+import ClassLetters from "@/components/classLetters";
 import { RichText } from "@payloadcms/richtext-lexical/react";
 import H1 from "@/components/ui/h1";
 import Link from "next/link";
@@ -99,6 +100,19 @@ export default async function StaffPage({
     },
   });
 
+  // Fetch recent letters for this class
+  const classLetters = await payload.find({
+    collection: "letters",
+    depth: 2,
+    limit: 5,
+    sort: "-date",
+    where: {
+      classes: {
+        equals: schoolClass.id,
+      },
+    },
+  });
+
   // Fetch upcoming events for this class
   const classEvents = await payload.find({
     collection: "events",
@@ -169,11 +183,9 @@ export default async function StaffPage({
       </Container>
 
       <Container>
-        <div className="flex flex-col gap-8 items-center">
-          <div className="flex flex-col gap-8">
-            <H2>Upcoming Events</H2>
-            <ClassEvents events={classEvents.docs} />
-          </div>
+        <div className="flex flex-col gap-8">
+          <H2>Upcoming Events</H2>
+          <ClassEvents events={classEvents.docs} />
         </div>
       </Container>
 
@@ -208,6 +220,16 @@ export default async function StaffPage({
           </div>
         </Container>
       )}
+
+      <Container>
+        <div className="flex flex-col gap-8 items-center">
+          <div className="flex flex-col gap-8">
+            <H2>Recent Letters</H2>
+            <ClassLetters letters={classLetters.docs} />
+          </div>
+        </div>
+      </Container>
+
       {!!schoolClass.files?.length && (
         <Container>
           <div className="flex flex-col gap-8">

@@ -76,6 +76,7 @@ export interface Config {
     clubs: Club;
     events: Event;
     newsArticles: NewsArticle;
+    letters: Letter;
     media: Media;
     users: User;
     'payload-folders': FolderInterface;
@@ -98,6 +99,7 @@ export interface Config {
     clubs: ClubsSelect<false> | ClubsSelect<true>;
     events: EventsSelect<false> | EventsSelect<true>;
     newsArticles: NewsArticlesSelect<false> | NewsArticlesSelect<true>;
+    letters: LettersSelect<false> | LettersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-folders': PayloadFoldersSelect<false> | PayloadFoldersSelect<true>;
@@ -470,6 +472,25 @@ export interface NewsArticle {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "letters".
+ */
+export interface Letter {
+  id: number;
+  title: string;
+  date: string;
+  /**
+   * Select the classes this letter is relevant to. Leave empty if it applies to the whole school.
+   */
+  classes?: (number | Class)[] | null;
+  /**
+   * Upload the letter as a PDF or Word document.
+   */
+  document: number | Media;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
 export interface User {
@@ -527,6 +548,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'newsArticles';
         value: number | NewsArticle;
+      } | null)
+    | ({
+        relationTo: 'letters';
+        value: number | Letter;
       } | null)
     | ({
         relationTo: 'media';
@@ -725,6 +750,18 @@ export interface NewsArticlesSelect<T extends boolean = true> {
   banner?: T;
   gallery?: T;
   classes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "letters_select".
+ */
+export interface LettersSelect<T extends boolean = true> {
+  title?: T;
+  date?: T;
+  classes?: T;
+  document?: T;
   updatedAt?: T;
   createdAt?: T;
 }

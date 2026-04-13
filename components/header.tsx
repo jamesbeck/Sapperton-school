@@ -147,6 +147,16 @@ export default function Header({
                                     <div>{child.title}</div>
                                   </Link>
                                 ))}
+                                {/*LETTERS INJECTION */}
+                                {item.title.toLowerCase().includes("news") && (
+                                  <Link
+                                    href="/letters"
+                                    className="hover:underline"
+                                    onClick={() => setOpen(false)}
+                                  >
+                                    <div>Letters</div>
+                                  </Link>
+                                )}
                               </div>
                             </motion.div>
                           )}

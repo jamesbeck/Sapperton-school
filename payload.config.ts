@@ -20,6 +20,7 @@ import { Pages } from "./collections/Pages";
 import { MenuItems } from "./collections/MenuItems";
 import { FooterMenuItems } from "./collections/FooterMenuItems";
 import { NewsArticles } from "./collections/NewsArticles";
+import { Letters } from "./collections/Letters";
 import slugify from "slugify";
 import { HeroWords } from "./globals/heroWords";
 import { HeadteacherWelcome } from "./globals/headteacherWelcome";
@@ -59,6 +60,7 @@ export default buildConfig({
     Clubs,
     Events,
     NewsArticles,
+    Letters,
     Media,
     Users,
   ],
