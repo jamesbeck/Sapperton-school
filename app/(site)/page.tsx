@@ -22,6 +22,15 @@ export default async function Home({}) {
     depth: 2,
   });
 
+  const helenCooperResult = await payload.find({
+    collection: "staff",
+    where: {
+      slug: { equals: "mrs-helen-cooper" },
+    },
+    depth: 2,
+    limit: 1,
+  });
+
   const heroWords = await payload.findGlobal({
     slug: "hero-words",
   });
@@ -77,7 +86,10 @@ export default async function Home({}) {
   return (
     <div>
       <Hero words={heroWords} openDays={openDaysResult.docs} />
-      <HeadMessage headteacherWelcome={headteacherWelcome} />
+      <HeadMessage
+        headteacherWelcome={headteacherWelcome}
+        helenCooper={helenCooperResult.docs[0] ?? null}
+      />
       <BookAVisit />
       <VideoSection />
       <LatestNews newsArticles={latestNews.docs} />

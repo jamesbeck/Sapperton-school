@@ -3,17 +3,20 @@ import Container from "@/components/container";
 import { bodoniModa } from "../fonts";
 import Image from "next/image";
 import { AnimateIn } from "@/utils/animateIn";
-import { HeadteacherWelcome, Media } from "@/payload-types";
+import { HeadteacherWelcome, Media, Staff } from "@/payload-types";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 
 export default function HeadMessage({
   headteacherWelcome,
+  helenCooper,
 }: {
   headteacherWelcome: HeadteacherWelcome;
+  helenCooper: Staff | null;
 }) {
   const image = headteacherWelcome.image as Media;
+  const helenImage = helenCooper?.image as Media | undefined;
 
   // Strip title prefix (e.g. "Mrs ", "Mr ", "Dr ") for consistency
   const stripTitle = (name: string) =>
@@ -100,11 +103,18 @@ export default function HeadMessage({
                   >
                     <div className="relative w-full h-[300px] md:h-[400px] overflow-hidden rounded-lg">
                       <Image
-                        src="/execHead.jpg"
+                        src={helenImage?.url || "/execHead.jpg"}
                         alt="Helen Cooper"
                         width={500}
                         height={600}
                         className="rounded-lg shadow-lg object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
+                        style={
+                          helenImage
+                            ? {
+                                objectPosition: `${helenImage.focalX}% ${helenImage.focalY}%`,
+                              }
+                            : undefined
+                        }
                       />
                     </div>
                     <div className="mt-4 text-center">
