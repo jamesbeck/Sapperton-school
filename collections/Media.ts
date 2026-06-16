@@ -1,8 +1,73 @@
 import type { CollectionConfig } from "payload";
 
+const schoolYearSuffixPattern = /(?:^|\s)(\d{4})-(\d{4})$/;
+
+function splitFilename(filename: string) {
+  const extensionIndex = filename.lastIndexOf(".");
+
+  if (extensionIndex <= 0) {
+    return {
+      basename: filename,
+      extension: "",
+    };
+  }
+
+  return {
+    basename: filename.slice(0, extensionIndex),
+    extension: filename.slice(extensionIndex),
+  };
+}
+
+async function mediaFilenameExists(
+  req: Parameters<
+    NonNullable<CollectionConfig["hooks"]>["beforeOperation"]
+  >[number] extends (args: infer T) => any
+    ? T["req"]
+    : never,
+  filename: string,
+) {
+  const existingMedia = await req.payload.db.findOne({
+    collection: "media",
+    req,
+    where: {
+      filename: {
+        equals: filename,
+      },
+    },
+  });
+
+  return Boolean(existingMedia);
+}
+
 export const Media: CollectionConfig = {
   slug: "media",
   folders: true,
+  hooks: {
+    beforeOperation: [
+      async ({ operation, req }) => {
+        if (operation !== "create" || !req.file?.name) {
+          return;
+        }
+
+        const { basename, extension } = splitFilename(req.file.name);
+
+        if (!schoolYearSuffixPattern.test(basename)) {
+          return;
+        }
+
+        const filenameAlreadyExists = await mediaFilenameExists(
+          req,
+          req.file.name,
+        );
+
+        if (!filenameAlreadyExists) {
+          return;
+        }
+
+        req.file.name = `${basename}-copy${extension}`;
+      },
+    ],
+  },
   access: {
     read: () => true,
   },
