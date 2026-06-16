@@ -1,4 +1,4 @@
-import type { CollectionConfig } from "payload";
+import type { CollectionConfig, PayloadRequest } from "payload";
 
 const schoolYearSuffixPattern = /(?:^|\s)(\d{4})-(\d{4})$/;
 
@@ -18,14 +18,7 @@ function splitFilename(filename: string) {
   };
 }
 
-async function mediaFilenameExists(
-  req: Parameters<
-    NonNullable<CollectionConfig["hooks"]>["beforeOperation"]
-  >[number] extends (args: infer T) => any
-    ? T["req"]
-    : never,
-  filename: string,
-) {
+async function mediaFilenameExists(req: PayloadRequest, filename: string) {
   const existingMedia = await req.payload.db.findOne({
     collection: "media",
     req,
