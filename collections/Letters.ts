@@ -2,6 +2,7 @@ import type { CollectionConfig } from "payload";
 
 export const Letters: CollectionConfig = {
   slug: "letters",
+  defaultSort: "-date",
   access: {
     read: () => true,
   },
