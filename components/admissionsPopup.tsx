@@ -134,7 +134,7 @@ export default function AdmissionsPopup() {
                 </p>
 
                 <a
-                  href="mailto:head@sapperton.gloucs.sch.uk?subject=September%202026%20place%20enquiry"
+                  href="mailto:m.crampton@sapperton.gloucs.sch.uk?subject=September%202026%20place%20enquiry"
                   className="mt-7 flex w-full items-center justify-between gap-4 rounded-2xl bg-sapperton-green px-5 py-4 text-white shadow-lg shadow-[#347560]/20 transition hover:-translate-y-0.5 hover:bg-[#2b6552] hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-sapperton-green focus-visible:ring-offset-2 sm:px-6"
                 >
                   <span className="flex min-w-0 items-center gap-3">
@@ -144,7 +144,7 @@ export default function AdmissionsPopup() {
                     <span className="min-w-0 text-left">
                       <span className="block font-bold">Email Meg Crampton</span>
                       <span className="block truncate text-xs text-white/75 sm:text-sm">
-                        head@sapperton.gloucs.sch.uk
+                        m.crampton@sapperton.gloucs.sch.uk
                       </span>
                     </span>
                   </span>
