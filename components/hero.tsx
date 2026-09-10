@@ -31,8 +31,6 @@ export default function Hero({
     });
   };
 
-  const nextOpenDay = openDays[0];
-
   return (
     <div>
       <div className="w-full h-screen relative">
@@ -62,20 +60,33 @@ export default function Hero({
                     repeat={Infinity}
                   />
                 </div>
-                {nextOpenDay && (
+                {openDays.length > 0 && (
                   <AnimateIn>
                     <button
                       onClick={scrollToOpenDays}
                       className="bg-white text-sapperton-green px-4 py-3 md:px-6 md:py-4 rounded-lg font-bold text-base md:text-xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 flex items-center gap-2 md:gap-3 w-fit group cursor-pointer"
                     >
-                      <CalendarHeart className="w-5 h-5 md:w-7 md:h-7 group-hover:animate-pulse" />
-                      <div className="flex flex-col items-start">
+                      <CalendarHeart className="w-5 h-5 md:w-7 md:h-7 shrink-0 group-hover:animate-pulse" />
+                      <div className="flex flex-col items-start gap-1 text-left">
                         <span className="text-sm md:text-base leading-tight">
-                          Join Us at Our Open Day
+                          Join Us at Our Open {openDays.length === 1 ? "Day" : "Days"}
                         </span>
-                        <span className="text-xs md:text-sm font-normal opacity-90 leading-tight">
-                          {formatDate(nextOpenDay.date)}
-                        </span>
+                        <time
+                          dateTime={openDays[0].date}
+                          className="text-lg md:text-2xl font-bold leading-tight"
+                        >
+                          {formatDate(openDays[0].date)}
+                        </time>
+                        {openDays.length > 1 && (
+                          <span className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs md:text-sm font-normal opacity-80 leading-tight">
+                            <span>Also coming up:</span>
+                            {openDays.slice(1).map((event) => (
+                              <time key={event.id} dateTime={event.date}>
+                                {formatDate(event.date)}
+                              </time>
+                            ))}
+                          </span>
+                        )}
                       </div>
                     </button>
                   </AnimateIn>

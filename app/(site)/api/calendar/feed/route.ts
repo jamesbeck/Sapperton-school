@@ -105,20 +105,12 @@ export async function GET(request: NextRequest) {
           .filter((id) => !isNaN(id))
       : [];
 
-    // Fetch all future and recent past events (last 30 days for context)
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
+    // Keep past events in subscriptions as well as on the school calendar.
     const eventsResult = await payload.find({
       collection: "events",
       depth: 2,
-      limit: 1000,
+      pagination: false,
       sort: "date",
-      where: {
-        date: {
-          greater_than_equal: thirtyDaysAgo.toISOString(),
-        },
-      },
     });
 
     // Filter events based on class selection

@@ -11,13 +11,8 @@ export default async function EventsPage() {
   const eventsResult = await payload.find({
     collection: "events",
     depth: 2,
-    limit: 1000,
+    pagination: false,
     sort: "date",
-    where: {
-      date: {
-        greater_than_equal: new Date().toISOString(),
-      },
-    },
   });
 
   return (
@@ -33,7 +28,7 @@ export default async function EventsPage() {
             <EventsCalendar events={eventsResult.docs} />
           ) : (
             <p className="text-center text-gray-600">
-              No upcoming events scheduled. Check back soon!
+              No events scheduled. Check back soon!
             </p>
           )}
         </div>

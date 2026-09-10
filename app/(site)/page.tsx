@@ -48,7 +48,7 @@ export default async function Home({}) {
       },
     },
     sort: "date",
-    limit: 10,
+    pagination: false,
   });
 
   // Fetch latest news articles
