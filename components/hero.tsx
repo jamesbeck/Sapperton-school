@@ -12,9 +12,11 @@ import { HeroWord, Event } from "@/payload-types";
 export default function Hero({
   words,
   openDays,
+  scrollTarget = "head-message",
 }: {
   words: HeroWord;
   openDays: Event[];
+  scrollTarget?: string;
 }) {
   const scrollToOpenDays = () => {
     document
@@ -99,7 +101,7 @@ export default function Hero({
       <AnimateIn>
         <HoverScale>
           <div className="absolute bottom-8 md:bottom-24 left-1/2 -translate-x-1/2 bg-white p-2 rounded-full text-foreground">
-            <a href="#head-message">
+            <a href={`#${scrollTarget}`} aria-label="Continue down the page">
               <ChevronDown className="w-8 h-8 md:w-12 md:h-12 animate" />
             </a>
           </div>
