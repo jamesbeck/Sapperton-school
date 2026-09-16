@@ -24,6 +24,7 @@ import {
   KeyboardEvent,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -31,6 +32,7 @@ import {
 const VOXD_BASE_URL = "https://agents.voxd.ai";
 const VOXD_AGENT_ID = "c6c212b2-6c02-4d4b-82e0-d2d869865d65";
 const VISITOR_STORAGE_KEY = "sapperton-school:visitor-id";
+const CHAT_BOTTOM_THRESHOLD = 72;
 
 const suggestions = [
   "When are the next term dates?",
@@ -138,6 +140,11 @@ export default function SchoolAssistant() {
   const [error, setError] = useState<string | null>(null);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const chatRef = useRef<VoxdChat | null>(null);
+  const chatWindowRef = useRef<HTMLDivElement | null>(null);
+  const followLatestRef = useRef(true);
+  const autoScrollPausedRef = useRef(false);
+  const autoScrollUntilRef = useRef(0);
+  const touchYRef = useRef<number | null>(null);
   const activityRef = useRef<VoxdActivityState>(createActivityState());
   const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -171,8 +178,56 @@ export default function SchoolAssistant() {
     [],
   );
 
+  const handleChatScroll = useCallback(() => {
+    const chatWindow = chatWindowRef.current;
+    if (!chatWindow || autoScrollPausedRef.current) return;
+
+    const distanceFromBottom =
+      chatWindow.scrollHeight -
+      chatWindow.scrollTop -
+      chatWindow.clientHeight;
+
+    if (distanceFromBottom <= CHAT_BOTTOM_THRESHOLD) {
+      followLatestRef.current = true;
+    } else if (Date.now() > autoScrollUntilRef.current) {
+      autoScrollPausedRef.current = true;
+      followLatestRef.current = false;
+    }
+  }, []);
+
+  const stopFollowingLatest = useCallback(() => {
+    const chatWindow = chatWindowRef.current;
+    if (chatWindow) {
+      chatWindow.scrollTo({
+        top: chatWindow.scrollTop,
+        behavior: "auto",
+      });
+    }
+
+    autoScrollPausedRef.current = true;
+    followLatestRef.current = false;
+    autoScrollUntilRef.current = 0;
+  }, []);
+
+  useLayoutEffect(() => {
+    const chatWindow = chatWindowRef.current;
+    if (!chatWindow || !followLatestRef.current) return;
+
+    const animationFrame = requestAnimationFrame(() => {
+      autoScrollUntilRef.current = Date.now() + 600;
+      chatWindow.scrollTo({
+        top: chatWindow.scrollHeight,
+        behavior: "smooth",
+      });
+    });
+
+    return () => cancelAnimationFrame(animationFrame);
+  }, [messages, streamedText, visibleActivityLabel, status]);
+
   const initialise = useCallback(async () => {
     chatRef.current?.stop();
+    autoScrollPausedRef.current = false;
+    followLatestRef.current = true;
     resetActivity();
     setStatus("starting");
     setError(null);
@@ -276,6 +331,8 @@ export default function SchoolAssistant() {
 
     setStatus("starting");
     setError(null);
+    autoScrollPausedRef.current = false;
+    followLatestRef.current = true;
     resetActivity();
     setAssistantStatus("Starting a new chat…");
 
@@ -311,6 +368,8 @@ export default function SchoolAssistant() {
       parts: [{ type: "text", text: cleanText }],
     };
 
+    autoScrollPausedRef.current = false;
+    followLatestRef.current = true;
     setMessages((current) => [...current, optimisticMessage]);
     setDraft("");
     setError(null);
@@ -420,7 +479,38 @@ export default function SchoolAssistant() {
             ) : null}
           </div>
 
-          <div className="h-[29rem] overflow-y-auto px-4 py-6 sm:px-6">
+          <div
+            ref={chatWindowRef}
+            onScroll={handleChatScroll}
+            onWheel={(event) => {
+              if (event.deltaY < 0) stopFollowingLatest();
+            }}
+            onTouchStart={(event) => {
+              touchYRef.current = event.touches[0]?.clientY ?? null;
+            }}
+            onTouchMove={(event) => {
+              const currentY = event.touches[0]?.clientY;
+              if (
+                currentY !== undefined &&
+                touchYRef.current !== null &&
+                currentY > touchYRef.current
+              ) {
+                stopFollowingLatest();
+              }
+              touchYRef.current = currentY ?? null;
+            }}
+            onTouchEnd={() => {
+              touchYRef.current = null;
+            }}
+            onTouchCancel={() => {
+              touchYRef.current = null;
+            }}
+            onMouseDown={(event) => {
+              const bounds = event.currentTarget.getBoundingClientRect();
+              if (event.clientX >= bounds.right - 16) stopFollowingLatest();
+            }}
+            className="h-[29rem] overflow-y-auto overscroll-contain px-4 py-6 sm:px-6"
+          >
             <div role="log" aria-live="polite">
               {!hasConversation ? (
                 <div className="flex h-full flex-col justify-center">
