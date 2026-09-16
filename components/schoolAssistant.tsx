@@ -2,7 +2,11 @@
 
 import { bodoniModa } from "@/fonts";
 import {
+  createActivityState,
+  reduceActivityState,
+  shouldShowActivity,
   VoxdChat,
+  type VoxdActivityState,
   type VoxdMessage,
   type VoxdRunEvent,
 } from "@/utils/voxdBrowser";
@@ -122,19 +126,57 @@ export default function SchoolAssistant() {
   const [messages, setMessages] = useState<VoxdMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [streamedText, setStreamedText] = useState("");
-  const [activity, setActivity] = useState("Getting things ready…");
+  const [assistantStatus, setAssistantStatus] = useState(
+    "Getting things ready…",
+  );
+  const [visibleActivityLabel, setVisibleActivityLabel] = useState<
+    string | null
+  >(null);
   const [status, setStatus] = useState<
     "starting" | "ready" | "thinking" | "error"
   >("starting");
   const [error, setError] = useState<string | null>(null);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const chatRef = useRef<VoxdChat | null>(null);
+  const activityRef = useRef<VoxdActivityState>(createActivityState());
+  const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const resetActivity = useCallback(() => {
+    if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
+    revealTimerRef.current = null;
+    activityRef.current = createActivityState();
+    setVisibleActivityLabel(null);
+  }, []);
+
+  const applyActivityEvent = useCallback(
+    (event: Parameters<typeof reduceActivityState>[1]) => {
+      const nextActivity = reduceActivityState(activityRef.current, event);
+      activityRef.current = nextActivity;
+
+      if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
+      revealTimerRef.current = null;
+
+      const visible = shouldShowActivity(nextActivity);
+      setVisibleActivityLabel(visible ? nextActivity.label : null);
+
+      if (nextActivity.active && !visible) {
+        revealTimerRef.current = setTimeout(() => {
+          const currentActivity = activityRef.current;
+          setVisibleActivityLabel(
+            shouldShowActivity(currentActivity) ? currentActivity.label : null,
+          );
+        }, 800);
+      }
+    },
+    [],
+  );
 
   const initialise = useCallback(async () => {
     chatRef.current?.stop();
+    resetActivity();
     setStatus("starting");
     setError(null);
-    setActivity("Getting things ready…");
+    setAssistantStatus("Getting things ready…");
     setMessages([]);
     setStreamedText("");
 
@@ -158,7 +200,9 @@ export default function SchoolAssistant() {
       setConversationId(conversation.id);
       setMessages(restoredMessages);
       setStatus("ready");
-      setActivity(restoredMessages.length > 0 ? "Chat restored" : "Ready to help");
+      setAssistantStatus(
+        restoredMessages.length > 0 ? "Chat restored" : "Ready to help",
+      );
     } catch (cause) {
       console.error(cause);
       setStatus("error");
@@ -168,11 +212,14 @@ export default function SchoolAssistant() {
           : "The assistant is taking a short break. Please try again.",
       );
     }
-  }, []);
+  }, [resetActivity]);
 
   useEffect(() => {
     void initialise();
-    return () => chatRef.current?.stop();
+    return () => {
+      chatRef.current?.stop();
+      if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
+    };
   }, [initialise]);
 
   const streamRun = useCallback(
@@ -180,23 +227,17 @@ export default function SchoolAssistant() {
       try {
         const terminalEvent = await chat.stream(currentConversationId, {
           runId,
-          onEvent: ({ data: event }: { data: VoxdRunEvent }) => {
+          onEvent: (streamEvent) => {
+            const event: VoxdRunEvent = streamEvent.data;
             if (event.runId !== runId) return;
 
-            if (event.type === "run.started") {
-              setActivity("Looking that up…");
-            } else if (event.type === "message.delta") {
+            applyActivityEvent(streamEvent);
+
+            if (event.type === "message.delta") {
               const delta = event.payload.delta;
               if (typeof delta === "string") {
                 setStreamedText((current) => current + delta);
-                setActivity("Writing a response…");
               }
-            } else if (event.type === "tool.started") {
-              setActivity(
-                typeof event.payload.label === "string"
-                  ? event.payload.label
-                  : "Checking school information…",
-              );
             }
           },
           onMessages: (canonicalMessages) => {
@@ -206,14 +247,16 @@ export default function SchoolAssistant() {
         });
 
         if (terminalEvent?.type === "run.completed") {
-          setActivity("Ready to help");
+          setAssistantStatus("Ready to help");
           setError(null);
         } else if (terminalEvent?.type === "run.cancelled") {
-          setActivity("Response stopped");
+          setAssistantStatus("Response stopped");
         } else if (terminalEvent?.type === "run.failed") {
           throw new Error("I couldn’t complete that response. Please try again.");
         }
       } catch (cause) {
+        resetActivity();
+        setAssistantStatus("Ready to help");
         setError(
           cause instanceof Error
             ? cause.message
@@ -224,7 +267,7 @@ export default function SchoolAssistant() {
         setStatus("ready");
       }
     },
-    [],
+    [applyActivityEvent, resetActivity],
   );
 
   const startNewChat = async () => {
@@ -233,7 +276,8 @@ export default function SchoolAssistant() {
 
     setStatus("starting");
     setError(null);
-    setActivity("Starting a new chat…");
+    resetActivity();
+    setAssistantStatus("Starting a new chat…");
 
     try {
       const conversation = await chat.createConversation(
@@ -243,7 +287,7 @@ export default function SchoolAssistant() {
       setConversationId(conversation.id);
       setMessages([]);
       setStreamedText("");
-      setActivity("Ready to help");
+      setAssistantStatus("Ready to help");
       setStatus("ready");
     } catch (cause) {
       setError(
@@ -252,7 +296,7 @@ export default function SchoolAssistant() {
           : "A new chat could not be started.",
       );
       setStatus("ready");
-      setActivity("Ready to help");
+      setAssistantStatus("Ready to help");
     }
   };
 
@@ -272,7 +316,8 @@ export default function SchoolAssistant() {
     setError(null);
     setStreamedText("");
     setStatus("thinking");
-    setActivity("Thinking…");
+    resetActivity();
+    setAssistantStatus("Thinking…");
 
     try {
       const queued = await chat.sendMessage(conversationId, cleanText);
@@ -284,7 +329,8 @@ export default function SchoolAssistant() {
       );
       setDraft(cleanText);
       setStatus("ready");
-      setActivity("Ready to help");
+      resetActivity();
+      setAssistantStatus("Ready to help");
       setError(
         cause instanceof Error
           ? cause.message
@@ -309,7 +355,7 @@ export default function SchoolAssistant() {
     const chat = chatRef.current;
     if (!activeRunId || !chat) return;
     await chat.cancel(activeRunId).catch(() => undefined);
-    setActivity("Stopping…");
+    setAssistantStatus("Stopping…");
   };
 
   const hasConversation = messages.length > 0 || Boolean(streamedText);
@@ -357,7 +403,7 @@ export default function SchoolAssistant() {
                   <span
                     className={`h-1.5 w-1.5 rounded-full ${status === "error" ? "bg-amber-500" : "bg-emerald-500"}`}
                   />
-                  {status === "starting" ? "Connecting…" : activity}
+                  {status === "starting" ? "Connecting…" : assistantStatus}
                 </p>
               </div>
             </div>
@@ -374,72 +420,82 @@ export default function SchoolAssistant() {
             ) : null}
           </div>
 
-          <div
-            className="h-[29rem] overflow-y-auto px-4 py-6 sm:px-6"
-            aria-live="polite"
-          >
-            {!hasConversation ? (
-              <div className="flex h-full flex-col justify-center">
-                <div className="max-w-[90%] rounded-2xl rounded-tl-md bg-white px-4 py-3 text-[0.95rem] leading-6 text-slate-700 shadow-sm ring-1 ring-black/5">
-                  Hello! I’m here to help with questions about Sapperton School.
-                  What would you like to know?
+          <div className="h-[29rem] overflow-y-auto px-4 py-6 sm:px-6">
+            <div role="log" aria-live="polite">
+              {!hasConversation ? (
+                <div className="flex h-full flex-col justify-center">
+                  <div className="max-w-[90%] rounded-2xl rounded-tl-md bg-white px-4 py-3 text-[0.95rem] leading-6 text-slate-700 shadow-sm ring-1 ring-black/5">
+                    Hello! I’m here to help with questions about Sapperton
+                    School. What would you like to know?
+                  </div>
+                  <p className="mb-3 mt-7 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                    Popular questions
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {suggestions.map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        type="button"
+                        disabled={status !== "ready"}
+                        onClick={() => void sendMessage(suggestion)}
+                        className="rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-left text-sm font-medium leading-5 text-[#285d4c] transition hover:-translate-y-0.5 hover:border-sapperton-green/40 hover:shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sapperton-green disabled:cursor-not-allowed disabled:opacity-55"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <p className="mb-3 mt-7 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                  Popular questions
-                </p>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {suggestions.map((suggestion) => (
-                    <button
-                      key={suggestion}
-                      type="button"
-                      disabled={status !== "ready"}
-                      onClick={() => void sendMessage(suggestion)}
-                      className="rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-left text-sm font-medium leading-5 text-[#285d4c] transition hover:-translate-y-0.5 hover:border-sapperton-green/40 hover:shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sapperton-green disabled:cursor-not-allowed disabled:opacity-55"
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-5">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-                  >
+              ) : (
+                <div className="space-y-5">
+                  {messages.map((message) => (
                     <div
-                      className={`max-w-[88%] rounded-2xl px-4 py-3 text-[0.95rem] leading-6 shadow-sm sm:max-w-[78%] ${message.role === "user" ? "rounded-br-md bg-sapperton-green text-white" : "rounded-tl-md bg-white text-slate-700 ring-1 ring-black/5"}`}
+                      key={message.id}
+                      className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                     >
-                      <ChatText text={messageText(message)} />
+                      <div
+                        className={`max-w-[88%] rounded-2xl px-4 py-3 text-[0.95rem] leading-6 shadow-sm sm:max-w-[78%] ${message.role === "user" ? "rounded-br-md bg-sapperton-green text-white" : "rounded-tl-md bg-white text-slate-700 ring-1 ring-black/5"}`}
+                      >
+                        <ChatText text={messageText(message)} />
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
 
-                {status === "thinking" ? (
-                  <div className="flex justify-start">
-                    <div className="max-w-[88%] rounded-2xl rounded-tl-md bg-white px-4 py-3 text-[0.95rem] leading-6 text-slate-700 shadow-sm ring-1 ring-black/5 sm:max-w-[78%]">
-                      {streamedText ? (
-                        <ChatText text={streamedText} />
-                      ) : (
-                        <div
-                          className="flex h-6 items-center gap-1.5"
-                          aria-label={activity}
-                        >
-                          {[0, 1, 2].map((dot) => (
-                            <span
-                              key={dot}
-                              className="h-1.5 w-1.5 animate-bounce rounded-full bg-sapperton-green/60"
-                              style={{ animationDelay: `${dot * 120}ms` }}
-                            />
-                          ))}
-                        </div>
-                      )}
+                  {status === "thinking" && !visibleActivityLabel ? (
+                    <div className="flex justify-start">
+                      <div className="max-w-[88%] rounded-2xl rounded-tl-md bg-white px-4 py-3 text-[0.95rem] leading-6 text-slate-700 shadow-sm ring-1 ring-black/5 sm:max-w-[78%]">
+                        {streamedText ? (
+                          <ChatText text={streamedText} />
+                        ) : (
+                          <div
+                            className="flex h-6 items-center gap-1.5"
+                            aria-label="The assistant is thinking"
+                          >
+                            {[0, 1, 2].map((dot) => (
+                              <span
+                                key={dot}
+                                aria-hidden="true"
+                                className="h-1.5 w-1.5 animate-bounce rounded-full bg-sapperton-green/60"
+                                style={{ animationDelay: `${dot * 120}ms` }}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ) : null}
-              </div>
-            )}
+                  ) : null}
+                </div>
+              )}
+            </div>
+            <div
+              id="agent-progress"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+              hidden={!visibleActivityLabel}
+              className="py-1.5 text-sm italic text-slate-500/70"
+            >
+              {visibleActivityLabel}
+            </div>
           </div>
 
           <div className="border-t border-black/8 bg-white p-3 sm:p-4">

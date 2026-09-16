@@ -15,6 +15,7 @@ export type VoxdRunEvent = {
   sequence: number;
   conversationId: string;
   runId: string;
+  createdAt?: string;
   type: string;
   payload: Record<string, unknown>;
 };
@@ -24,6 +25,162 @@ export type VoxdStreamEvent = {
   type: string;
   data: VoxdRunEvent;
 };
+
+type VoxdActivityTool = {
+  id: string;
+  label: string;
+  startedAt: number;
+};
+
+export type VoxdActivityState = {
+  active: boolean;
+  runId: string | null;
+  startedAt: number | null;
+  label: string | null;
+  activeTools: VoxdActivityTool[];
+  phase: "idle" | "working" | "tool";
+};
+
+const activityLabel = (value: unknown, fallback = "Thinking") => {
+  const label =
+    typeof value === "string"
+      ? value.trim().replace(/[.\u2026]+$/, "")
+      : fallback;
+  return `${label || fallback}\u2026`;
+};
+
+const runEvent = (
+  event: VoxdStreamEvent | VoxdRunEvent,
+): VoxdRunEvent => ("data" in event ? event.data : event);
+
+export function createActivityState(): VoxdActivityState {
+  return {
+    active: false,
+    runId: null,
+    startedAt: null,
+    label: null,
+    activeTools: [],
+    phase: "idle",
+  };
+}
+
+export function reduceActivityState(
+  currentState: VoxdActivityState | null | undefined,
+  streamedEvent: VoxdStreamEvent | VoxdRunEvent,
+): VoxdActivityState {
+  const state = currentState ?? createActivityState();
+  const event = runEvent(streamedEvent);
+  if (!event?.type) return state;
+
+  const payload = event.payload ?? {};
+  const parsedTimestamp = event.createdAt
+    ? Date.parse(event.createdAt)
+    : Number.NaN;
+  const timestamp = Number.isFinite(parsedTimestamp)
+    ? parsedTimestamp
+    : Date.now();
+  const startedAt =
+    state.active && state.runId === event.runId
+      ? state.startedAt
+      : timestamp;
+
+  if (
+    [
+      "message.delta",
+      "message.completed",
+      "run.completed",
+      "run.failed",
+      "run.cancelled",
+    ].includes(event.type)
+  ) {
+    return createActivityState();
+  }
+
+  if (["run.queued", "run.started"].includes(event.type)) {
+    return {
+      ...state,
+      active: true,
+      runId: event.runId ?? state.runId,
+      startedAt,
+      label: state.label ?? "Thinking\u2026",
+      phase: "working",
+    };
+  }
+
+  if (["step.started", "step.completed"].includes(event.type)) {
+    return {
+      ...state,
+      active: true,
+      runId: event.runId ?? state.runId,
+      startedAt,
+      label: activityLabel(payload.label),
+      phase: "working",
+    };
+  }
+
+  if (event.type === "tool.started") {
+    const id =
+      typeof payload.activityId === "string"
+        ? payload.activityId
+        : `event-${event.sequence ?? timestamp}`;
+    const tool = {
+      id,
+      label: activityLabel(payload.label),
+      startedAt: timestamp,
+    };
+    const activeTools = [
+      ...state.activeTools.filter((item) => item.id !== id),
+      tool,
+    ];
+    return {
+      ...state,
+      active: true,
+      runId: event.runId ?? state.runId,
+      startedAt,
+      label: tool.label,
+      activeTools,
+      phase: "tool",
+    };
+  }
+
+  if (["tool.completed", "tool.failed"].includes(event.type)) {
+    const id =
+      typeof payload.activityId === "string" ? payload.activityId : null;
+    const label = activityLabel(payload.label);
+    const activeTools = id
+      ? state.activeTools.filter((item) => item.id !== id)
+      : state.activeTools.filter((item) => item.label !== label);
+    const latestTool = activeTools.at(-1);
+    return {
+      ...state,
+      active: true,
+      runId: event.runId ?? state.runId,
+      startedAt,
+      label:
+        latestTool?.label ??
+        (event.type === "tool.failed"
+          ? "Continuing\u2026"
+          : "Reviewing the results\u2026"),
+      activeTools,
+      phase: latestTool ? "tool" : "working",
+    };
+  }
+
+  return state;
+}
+
+export function shouldShowActivity(
+  state: VoxdActivityState,
+  now = Date.now(),
+  delayMs = 800,
+) {
+  return Boolean(
+    state.active &&
+      state.label &&
+      state.startedAt !== null &&
+      now - state.startedAt >= delayMs,
+  );
+}
 
 type SessionPayload = {
   token: string;
