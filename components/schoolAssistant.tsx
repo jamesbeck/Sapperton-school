@@ -44,7 +44,7 @@ import {
 const VOXD_BASE_URL = "https://agents.voxd.ai";
 const VOXD_AGENT_ID = "c6c212b2-6c02-4d4b-82e0-d2d869865d65";
 const VISITOR_STORAGE_KEY = "sapperton-school:visitor-id";
-const ASSISTANT_PREVIEW_STORAGE_KEY = "sapperton-school:assistant-preview";
+const ASSISTANT_ENABLED_STORAGE_KEY = "sapperton-school:assistant-enabled";
 const CHAT_BOTTOM_THRESHOLD = 72;
 const MAX_ATTACHMENTS = 10;
 const MAX_ATTACHMENT_BYTES = 50 * 1024 * 1024;
@@ -331,15 +331,15 @@ export default function SchoolAssistant() {
   );
 
   useEffect(() => {
-    const isPreviewPage = pathname === "/assistant-preview";
+    const isHomePage = pathname === "/";
     const wasEnabled =
-      localStorage.getItem(ASSISTANT_PREVIEW_STORAGE_KEY) === "enabled";
+      localStorage.getItem(ASSISTANT_ENABLED_STORAGE_KEY) === "enabled";
 
-    if (isPreviewPage) {
-      localStorage.setItem(ASSISTANT_PREVIEW_STORAGE_KEY, "enabled");
+    if (isHomePage) {
+      localStorage.setItem(ASSISTANT_ENABLED_STORAGE_KEY, "enabled");
     }
 
-    setIsEnabled(wasEnabled || isPreviewPage);
+    setIsEnabled(wasEnabled || isHomePage);
   }, [pathname]);
 
   useEffect(() => {
