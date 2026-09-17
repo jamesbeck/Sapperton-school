@@ -1,12 +1,24 @@
 "use server";
 
 import sgMail from "@sendgrid/mail";
+import { headers } from "next/headers";
+
+const TURNSTILE_VERIFY_URL =
+  "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+const TURNSTILE_TEST_SECRET = "1x0000000000000000000000000000000AA";
+const TURNSTILE_ACTION = "contact_form";
+const DEFAULT_ALLOWED_HOSTNAMES = new Set([
+  "sappertonschool.org",
+  "www.sappertonschool.org",
+  "sapperton-school.vercel.app",
+]);
 
 interface ContactFormData {
   name: string;
   email: string;
   phone?: string;
   message: string;
+  turnstileToken: string;
 }
 
 interface FormResponse {
@@ -14,10 +26,86 @@ interface FormResponse {
   message: string;
 }
 
+interface TurnstileResponse {
+  success: boolean;
+  hostname?: string;
+  action?: string;
+  "error-codes"?: string[];
+}
+
+async function verifyTurnstileToken(token: string): Promise<boolean> {
+  const secret =
+    process.env.TURNSTILE_SECRET_KEY ||
+    (process.env.NODE_ENV === "development" ? TURNSTILE_TEST_SECRET : "");
+
+  if (!secret || !token) return false;
+
+  try {
+    const requestHeaders = await headers();
+    const forwardedFor = requestHeaders.get("x-forwarded-for");
+    const remoteIp = forwardedFor?.split(",")[0]?.trim();
+
+    const response = await fetch(TURNSTILE_VERIFY_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        secret,
+        response: token,
+        ...(remoteIp ? { remoteip: remoteIp } : {}),
+      }),
+      cache: "no-store",
+    });
+
+    if (!response.ok) return false;
+
+    const result = (await response.json()) as TurnstileResponse;
+    if (!result.success) {
+      console.warn("Turnstile rejected a contact submission", {
+        errorCodes: result["error-codes"],
+      });
+      return false;
+    }
+
+    // Cloudflare's test keys return synthetic data, so only enforce these
+    // production bindings when the real widget secret is in use.
+    if (secret !== TURNSTILE_TEST_SECRET) {
+      const allowedHostnames = new Set(
+        process.env.TURNSTILE_ALLOWED_HOSTNAMES?.split(",")
+          .map((hostname) => hostname.trim())
+          .filter(Boolean) || DEFAULT_ALLOWED_HOSTNAMES,
+      );
+
+      if (
+        result.action !== TURNSTILE_ACTION ||
+        !result.hostname ||
+        !allowedHostnames.has(result.hostname)
+      ) {
+        console.warn("Turnstile returned an unexpected contact-form binding", {
+          action: result.action,
+          hostname: result.hostname,
+        });
+        return false;
+      }
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Turnstile verification failed", error);
+    return false;
+  }
+}
+
 export async function sendContactEmail(
   data: ContactFormData
 ): Promise<FormResponse> {
   try {
+    if (!(await verifyTurnstileToken(data.turnstileToken))) {
+      return {
+        success: false,
+        message: "Security verification failed. Please refresh the page and try again.",
+      };
+    }
+
     // Validate environment variable
     const apiKey = process.env.SENDGRID_API_KEY;
     if (!apiKey) {

@@ -5,6 +5,12 @@ import { useState } from "react";
 import { sendContactEmail } from "@/app/actions/sendContactEmail";
 import Button from "./ui/button";
 import { Send } from "lucide-react";
+import TurnstileWidget from "./turnstileWidget";
+
+const TURNSTILE_TEST_SITE_KEY = "1x00000000000000000000AA";
+const turnstileSiteKey =
+  process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ||
+  (process.env.NODE_ENV === "development" ? TURNSTILE_TEST_SITE_KEY : "");
 
 interface ContactFormData {
   name: string;
@@ -15,6 +21,8 @@ interface ContactFormData {
 
 export default function ContactForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileResetSignal, setTurnstileResetSignal] = useState(0);
   const [submitMessage, setSubmitMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -28,11 +36,19 @@ export default function ContactForm() {
   } = useForm<ContactFormData>();
 
   const onSubmit = async (data: ContactFormData) => {
+    if (!turnstileToken) {
+      setSubmitMessage({
+        type: "error",
+        text: "Please wait for the security check to complete and try again.",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitMessage(null);
 
     try {
-      const result = await sendContactEmail(data);
+      const result = await sendContactEmail({ ...data, turnstileToken });
 
       if (result.success) {
         setSubmitMessage({ type: "success", text: result.message });
@@ -46,6 +62,8 @@ export default function ContactForm() {
         text: "An unexpected error occurred. Please try again.",
       });
     } finally {
+      setTurnstileToken(null);
+      setTurnstileResetSignal((signal) => signal + 1);
       setIsSubmitting(false);
     }
   };
@@ -135,6 +153,29 @@ export default function ContactForm() {
         )}
       </div>
 
+      {/* Bot protection. The managed widget remains hidden unless interaction is needed. */}
+      {turnstileSiteKey ? (
+        <TurnstileWidget
+          siteKey={turnstileSiteKey}
+          onVerify={(token) => {
+            setTurnstileToken(token);
+            if (token) setSubmitMessage(null);
+          }}
+          onError={() =>
+            setSubmitMessage({
+              type: "error",
+              text: "The security check could not load. Please refresh the page and try again.",
+            })
+          }
+          resetSignal={turnstileResetSignal}
+        />
+      ) : (
+        <p className="text-sm text-red-600" role="alert">
+          The contact form is temporarily unavailable. Please contact the
+          school directly.
+        </p>
+      )}
+
       {/* Submit Message */}
       {submitMessage && (
         <div
@@ -155,7 +196,7 @@ export default function ContactForm() {
           label={isSubmitting ? "Sending..." : "Send Message"}
           icon={Send}
           loading={isSubmitting}
-          disabled={isSubmitting}
+          disabled={isSubmitting || !turnstileToken}
           buttonStyle="green"
         />
       </div>
