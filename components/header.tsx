@@ -48,7 +48,7 @@ export default function Header({
   }, []);
 
   useMotionValueEvent(scrollY, "change", (latest) => {
-    setLogoOpacity(1 - latest / (vh - 100));
+    setLogoOpacity(Math.max(0, 1 - latest / (vh - 100)));
   });
 
   return (
@@ -225,12 +225,25 @@ function LogoAndMenuButton({
   open: boolean;
   setOpen: (open: boolean) => void;
 }) {
+  const isLogoHidden = logoOpacity === 0;
+
   return (
     <div className={cn("fixed w-full z-100 px-8 md:px-16 pb-4")}>
       <div className="w-full mx-auto max-w-7xl relative h-auto py-4">
         <AnimatePresence>
-          <motion.div style={{ opacity: logoOpacity }}>
-            <Link href="/" className="block select-none" draggable="false">
+          <motion.div
+            style={{
+              opacity: logoOpacity,
+              pointerEvents: isLogoHidden ? "none" : "auto",
+            }}
+            aria-hidden={isLogoHidden}
+          >
+            <Link
+              href="/"
+              className="block select-none"
+              draggable="false"
+              tabIndex={isLogoHidden ? -1 : undefined}
+            >
               <div className="flex flex-col items-start gap-1 md:gap-2">
                 <Image
                   src="/logo.png"
