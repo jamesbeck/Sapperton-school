@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { allowedVoxdClientTools } from "@/utils/voxdClientTools";
 
 const DEFAULT_VOXD_URL = "https://agents.voxd.ai";
 const DEFAULT_AGENT_ID = "c6c212b2-6c02-4d4b-82e0-d2d869865d65";
@@ -75,6 +76,7 @@ export async function POST(request: NextRequest) {
           resumeToken,
           allowedOrigin,
           ttlSeconds: BROWSER_TOKEN_TTL_SECONDS,
+          clientTools: allowedVoxdClientTools,
         },
       );
     }
@@ -88,6 +90,7 @@ export async function POST(request: NextRequest) {
         allowedOrigin,
         ttlSeconds: BROWSER_TOKEN_TTL_SECONDS,
         resumeTtlSeconds: RESUME_TOKEN_TTL_SECONDS,
+        clientTools: allowedVoxdClientTools,
         conversation: {
           title: body.conversationTitle || "Sapperton School website chat",
         },

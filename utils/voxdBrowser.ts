@@ -192,12 +192,52 @@ type SessionPayload = {
 
 type RequestOptions = RequestInit & { headers?: Record<string, string> };
 
+export type VoxdClientToolContext = {
+  toolCallId: string;
+  name: string;
+};
+
+export type VoxdClientTool = {
+  description: string;
+  inputSchema: Record<string, unknown>;
+  requiresConfirmation?: boolean;
+  execute: (
+    input: Record<string, unknown>,
+    context: VoxdClientToolContext,
+  ) => unknown | Promise<unknown>;
+};
+
+export type VoxdClientTools = Record<string, VoxdClientTool>;
+
+type VoxdClientToolCall = {
+  id?: string;
+  callId?: string;
+  name?: string;
+  input?: Record<string, unknown>;
+  requiresConfirmation?: boolean;
+};
+
+type VoxdClientToolResult =
+  | { status: "completed"; output: unknown }
+  | {
+      status: "failed";
+      error: { code: string; message: string };
+    };
+
+type ConfirmClientTool = (call: {
+  id: string;
+  name: string;
+  input: Record<string, unknown>;
+}) => boolean | Promise<boolean>;
+
 type ResumeOptions = {
   baseUrl: string;
   sessionEndpoint: string;
   agentId: string;
   visitorId: string;
   conversationTitle?: string;
+  clientTools?: VoxdClientTools;
+  confirmClientTool?: ConfirmClientTool;
 };
 
 type StreamOptions = {
@@ -213,6 +253,11 @@ export class VoxdChat {
   private expiresAt: number;
   private sessionEndpoint: string;
   private agentId: string;
+  private clientTools: VoxdClientTools;
+  private confirmClientTool?: ConfirmClientTool;
+  private executingClientToolIds = new Set<string>();
+  private completedClientToolIds = new Set<string>();
+  private pendingClientToolResults = new Map<string, VoxdClientToolResult>();
   private abortController: AbortController | null = null;
 
   constructor({
@@ -221,18 +266,24 @@ export class VoxdChat {
     expiresAt,
     sessionEndpoint,
     agentId,
+    clientTools = {},
+    confirmClientTool,
   }: {
     baseUrl: string;
     token: string;
     expiresAt: string;
     sessionEndpoint: string;
     agentId: string;
+    clientTools?: VoxdClientTools;
+    confirmClientTool?: ConfirmClientTool;
   }) {
     this.baseUrl = baseUrl.replace(/\/$/, "");
     this.token = token;
     this.expiresAt = new Date(expiresAt).getTime();
     this.sessionEndpoint = sessionEndpoint;
     this.agentId = agentId;
+    this.clientTools = clientTools;
+    this.confirmClientTool = confirmClientTool;
   }
 
   static async resumeOrCreate({
@@ -241,6 +292,8 @@ export class VoxdChat {
     agentId,
     visitorId,
     conversationTitle = "Website chat",
+    clientTools = {},
+    confirmClientTool,
   }: ResumeOptions) {
     const response = await fetch(sessionEndpoint, {
       method: "POST",
@@ -251,6 +304,7 @@ export class VoxdChat {
         visitorId,
         allowedOrigin: window.location.origin,
         conversationTitle,
+        clientTools: serializeClientTools(clientTools),
       }),
     });
     const payload = await readResponse<SessionPayload>(response);
@@ -261,6 +315,8 @@ export class VoxdChat {
       agentId,
       token: data.token,
       expiresAt: data.expiresAt,
+      clientTools,
+      confirmClientTool,
     });
     const storageKey = `voxd:${agentId}:conversation`;
     const rememberedId = localStorage.getItem(storageKey);
@@ -340,6 +396,8 @@ export class VoxdChat {
     let lastEventId = Number(sessionStorage.getItem(storageKey) ?? 0);
     let delay = 500;
 
+    await this.executePendingClientTools(conversationId);
+
     while (!this.abortController.signal.aborted) {
       await this.ensureFreshToken();
       const response = await fetch(
@@ -365,6 +423,12 @@ export class VoxdChat {
           sessionStorage.setItem(storageKey, String(lastEventId));
           onEvent?.(event);
 
+          if (event.type === "client_tool.requested") {
+            await this.executeClientTool(
+              event.data.payload as VoxdClientToolCall,
+            );
+          }
+
           if (
             ["run.completed", "run.failed", "run.cancelled"].includes(event.type) &&
             (!runId || event.data.runId === runId)
@@ -381,6 +445,125 @@ export class VoxdChat {
     }
 
     return null;
+  }
+
+  private async executePendingClientTools(conversationId: string) {
+    const calls = await this.request<VoxdClientToolCall[]>(
+      `/chat/v1/conversations/${conversationId}/client-tool-calls`,
+    );
+
+    for (const call of calls) await this.executeClientTool(call);
+  }
+
+  private async executeClientTool(call: VoxdClientToolCall) {
+    const callId = call.callId ?? call.id;
+    const name = call.name;
+
+    if (
+      !callId ||
+      !name ||
+      this.executingClientToolIds.has(callId) ||
+      this.completedClientToolIds.has(callId)
+    ) {
+      return;
+    }
+
+    this.executingClientToolIds.add(callId);
+
+    try {
+      let result = this.pendingClientToolResults.get(callId);
+      const registered = this.clientTools[name];
+
+      if (!result && !registered?.execute) {
+        result = {
+          status: "failed",
+          error: {
+            code: "handler_unavailable",
+            message: `No browser handler is registered for ${name}`,
+          },
+        };
+      }
+
+      if (!result && call.requiresConfirmation) {
+        if (!this.confirmClientTool) {
+          result = {
+            status: "failed",
+            error: {
+              code: "confirmation_unavailable",
+              message:
+                "This action requires confirmation, but the website did not provide a confirmation handler",
+            },
+          };
+        } else {
+          const approved = await this.confirmClientTool({
+            id: callId,
+            name,
+            input: call.input ?? {},
+          });
+
+          if (!approved) {
+            result = {
+              status: "failed",
+              error: {
+                code: "user_declined",
+                message: "The user declined this browser action",
+              },
+            };
+          }
+        }
+      }
+
+      if (!result) {
+        try {
+          const output = await registered.execute(call.input ?? {}, {
+            toolCallId: callId,
+            name,
+          });
+          result = { status: "completed", output: output ?? null };
+        } catch (cause) {
+          result = {
+            status: "failed",
+            error: {
+              code: "handler_failed",
+              message:
+                cause instanceof Error
+                  ? cause.message.slice(0, 1_000)
+                  : "The browser handler failed",
+            },
+          };
+        }
+      }
+
+      this.pendingClientToolResults.set(callId, result);
+      await this.submitClientToolResult(callId, result);
+      this.pendingClientToolResults.delete(callId);
+      this.completedClientToolIds.add(callId);
+    } catch (cause) {
+      if (
+        cause instanceof Error &&
+        "status" in cause &&
+        cause.status === 409
+      ) {
+        this.pendingClientToolResults.delete(callId);
+        this.completedClientToolIds.add(callId);
+        return;
+      }
+      throw cause;
+    } finally {
+      this.executingClientToolIds.delete(callId);
+    }
+  }
+
+  private async submitClientToolResult(
+    callId: string,
+    result: VoxdClientToolResult,
+  ) {
+    return this.request(`/chat/v1/client-tool-calls/${callId}/result`, {
+      method: "POST",
+      headers: { "Idempotency-Key": callId },
+      body: JSON.stringify(result),
+      keepalive: true,
+    });
   }
 
   stop() {
@@ -423,6 +606,7 @@ export class VoxdChat {
       body: JSON.stringify({
         agentId: this.agentId,
         allowedOrigin: window.location.origin,
+        clientTools: serializeClientTools(this.clientTools),
       }),
     });
     const payload = await readResponse<SessionPayload>(response);
@@ -430,6 +614,15 @@ export class VoxdChat {
     this.token = data.token;
     this.expiresAt = new Date(data.expiresAt).getTime();
   }
+}
+
+function serializeClientTools(clientTools: VoxdClientTools) {
+  return Object.entries(clientTools).map(([name, tool]) => ({
+    name,
+    description: tool.description,
+    inputSchema: tool.inputSchema,
+    requiresConfirmation: Boolean(tool.requiresConfirmation),
+  }));
 }
 
 async function* parseSse(stream: ReadableStream<Uint8Array>) {

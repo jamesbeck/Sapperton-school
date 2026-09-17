@@ -10,6 +10,10 @@ import {
   type VoxdRunEvent,
 } from "@/utils/voxdBrowser";
 import {
+  NAVIGATE_TO_CONTENT_TOOL,
+  navigateToContentDefinition,
+} from "@/utils/voxdClientTools";
+import {
   ArrowUp,
   Check,
   MessageCircleQuestion,
@@ -18,13 +22,14 @@ import {
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   FormEvent,
   KeyboardEvent,
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -42,16 +47,74 @@ const suggestions = [
   "Tell me about admissions",
 ];
 
+function navigationPath(input: Record<string, unknown>) {
+  const destination = input.destination;
+  const identifier = input.identifier;
+
+  const requireIdentifier = () => {
+    if (
+      typeof identifier !== "string" ||
+      !/^[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)*$/.test(identifier)
+    ) {
+      throw new Error(`A valid identifier is required for ${destination}`);
+    }
+
+    return identifier
+      .split("/")
+      .map((segment) => encodeURIComponent(segment))
+      .join("/");
+  };
+
+  switch (destination) {
+    case "home":
+      return "/";
+    case "content_page":
+      return `/${requireIdentifier()}`;
+    case "news_index":
+      return "/news";
+    case "news_article":
+      return `/news/${requireIdentifier()}`;
+    case "events_index":
+      return "/events";
+    case "event":
+      return `/events/${requireIdentifier()}`;
+    case "classes_index":
+      return "/classes";
+    case "class":
+      return `/classes/${requireIdentifier()}`;
+    case "staff_index":
+      return "/our-school/staff";
+    case "staff_member":
+      return `/our-school/staff/${requireIdentifier()}`;
+    case "letters":
+      return "/letters";
+    case "term_dates":
+      return "/term-dates";
+    case "contact":
+      return "/contact-us";
+    default:
+      throw new Error("The requested website destination is not available");
+  }
+}
+
 function messageText(message: VoxdMessage) {
   return message.parts.map((part) => part.text).join("\n");
 }
 
 function InlineText({ text }: { text: string }) {
-  const parts = text.split(/(\*\*[^*]+\*\*|\[[^\]]+\]\(https?:\/\/[^)]+\))/g);
+  const parts = text.split(
+    /(\*\*[^*]+\*\*|\[[^\]]+\]\(https?:\/\/[^)\s]+\)|https?:\/\/[^\s<]+)/g,
+  );
 
   return parts.map((part, index) => {
     const bold = part.match(/^\*\*(.+)\*\*$/);
-    if (bold) return <strong key={index}>{bold[1]}</strong>;
+    if (bold) {
+      return (
+        <strong key={index}>
+          <InlineText text={bold[1]} />
+        </strong>
+      );
+    }
 
     const link = part.match(/^\[([^\]]+)\]\((https?:\/\/[^)]+)\)$/);
     if (link) {
@@ -61,9 +124,24 @@ function InlineText({ text }: { text: string }) {
           href={link[2]}
           target="_blank"
           rel="noreferrer"
-          className="font-medium underline decoration-current/40 underline-offset-2 hover:decoration-current"
+          className="pointer-events-auto cursor-pointer break-all font-medium underline decoration-current/40 underline-offset-2 [overflow-wrap:anywhere] hover:decoration-current"
         >
-          {link[1]}
+          <InlineText text={link[1]} />
+        </a>
+      );
+    }
+
+    const bareLink = part.match(/^(https?:\/\/[^\s<]+)$/);
+    if (bareLink) {
+      return (
+        <a
+          key={index}
+          href={bareLink[1]}
+          target="_blank"
+          rel="noreferrer"
+          className="pointer-events-auto cursor-pointer break-all font-medium underline decoration-current/40 underline-offset-2 [overflow-wrap:anywhere] hover:decoration-current"
+        >
+          {bareLink[1]}
         </a>
       );
     }
@@ -73,9 +151,14 @@ function InlineText({ text }: { text: string }) {
 }
 
 function ChatText({ text }: { text: string }) {
+  const normalizedText = text.replace(
+    /\]\s*\(\s*(https?:\/\/[^)\s]+)\s*\)/g,
+    "]($1)",
+  );
+
   return (
-    <div className="space-y-3">
-      {text.split(/\n{2,}/).map((paragraph, index) => {
+    <div className="min-w-0 space-y-3 overflow-hidden [overflow-wrap:anywhere]">
+      {normalizedText.split(/\n{2,}/).map((paragraph, index) => {
         const lines = paragraph.split("\n");
         const isList = lines.every((line) => /^[-*] /.test(line));
 
@@ -125,6 +208,7 @@ function ChatText({ text }: { text: string }) {
 }
 
 export default function SchoolAssistant() {
+  const router = useRouter();
   const pathname = usePathname();
   const [isEnabled, setIsEnabled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -153,6 +237,26 @@ export default function SchoolAssistant() {
   const activityRef = useRef<VoxdActivityState>(createActivityState());
   const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const launcherRef = useRef<HTMLButtonElement | null>(null);
+  const clientTools = useMemo(
+    () => ({
+      [NAVIGATE_TO_CONTENT_TOOL]: {
+        description: navigateToContentDefinition.description,
+        inputSchema: navigateToContentDefinition.inputSchema,
+        requiresConfirmation: false,
+        execute: async (input: Record<string, unknown>) => {
+          const path = navigationPath(input);
+          router.push(path);
+
+          return {
+            navigated: true,
+            destination: input.destination,
+            identifier: input.identifier ?? null,
+          };
+        },
+      },
+    }),
+    [router],
+  );
 
   useEffect(() => {
     const isPreviewPage = pathname === "/assistant-preview";
@@ -293,6 +397,7 @@ export default function SchoolAssistant() {
         agentId: VOXD_AGENT_ID,
         visitorId,
         conversationTitle: "Sapperton School website chat",
+        clientTools,
       });
       const restoredMessages = await chat.listMessages(conversation.id);
 
@@ -312,7 +417,7 @@ export default function SchoolAssistant() {
           : "The assistant is taking a short break. Please try again.",
       );
     }
-  }, [resetActivity]);
+  }, [clientTools, resetActivity]);
 
   useEffect(() => {
     if (!isEnabled) return;
@@ -604,7 +709,7 @@ export default function SchoolAssistant() {
                       className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                     >
                       <div
-                        className={`max-w-[88%] rounded-2xl px-4 py-3 text-[0.95rem] leading-6 shadow-sm sm:max-w-[78%] ${message.role === "user" ? "rounded-br-md bg-sapperton-green text-white" : "rounded-tl-md bg-white text-slate-700 ring-1 ring-black/5"}`}
+                        className={`min-w-0 max-w-[88%] overflow-hidden rounded-2xl px-4 py-3 text-[0.95rem] leading-6 shadow-sm [overflow-wrap:anywhere] sm:max-w-[78%] ${message.role === "user" ? "rounded-br-md bg-sapperton-green text-white" : "rounded-tl-md bg-white text-slate-700 ring-1 ring-black/5"}`}
                       >
                         <ChatText text={messageText(message)} />
                       </div>
@@ -613,7 +718,7 @@ export default function SchoolAssistant() {
 
                   {status === "thinking" && !visibleActivityLabel ? (
                     <div className="flex justify-start">
-                      <div className="max-w-[88%] rounded-2xl rounded-tl-md bg-white px-4 py-3 text-[0.95rem] leading-6 text-slate-700 shadow-sm ring-1 ring-black/5 sm:max-w-[78%]">
+                      <div className="min-w-0 max-w-[88%] overflow-hidden rounded-2xl rounded-tl-md bg-white px-4 py-3 text-[0.95rem] leading-6 text-slate-700 shadow-sm ring-1 ring-black/5 [overflow-wrap:anywhere] sm:max-w-[78%]">
                         {streamedText ? (
                           <ChatText text={streamedText} />
                         ) : (
