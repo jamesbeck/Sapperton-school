@@ -8,6 +8,7 @@ import { GroupedMenuItem } from "@/types";
 import { MenuItem, FooterMenuItem } from "@/payload-types";
 import Footer from "@/components/footer";
 import { Analytics } from "@vercel/analytics/react";
+import SchoolAssistant from "@/components/schoolAssistant";
 
 // Revalidate menu structure every 30 seconds
 export const revalidate = 30;
@@ -121,6 +122,7 @@ export default async function RootLayout({
           classes={classes.docs || []}
         />
         {children}
+        <SchoolAssistant />
         <Footer />
         <Analytics />
       </body>

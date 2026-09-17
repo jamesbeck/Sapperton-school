@@ -7,7 +7,6 @@ import Hero from "@/components/hero";
 import InstagramPreview from "@/components/instagramPreview";
 import LatestNews from "@/components/latestNews";
 import OpenDays from "@/components/openDays";
-import SchoolAssistant from "@/components/schoolAssistant";
 import H2 from "@/components/ui/h2";
 import VideoSection from "@/components/videoSection";
 import payload from "@/payload";
@@ -88,9 +87,8 @@ export default async function AssistantPreviewPage() {
       <Hero
         words={heroWords}
         openDays={openDaysResult.docs}
-        scrollTarget="school-assistant"
+        scrollTarget="head-message"
       />
-      <SchoolAssistant />
       <HeadMessage
         headteacherWelcome={headteacherWelcome}
         helenCooper={helenCooperResult.docs[0] ?? null}
