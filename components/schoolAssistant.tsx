@@ -29,7 +29,7 @@ import {
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   FormEvent,
   KeyboardEvent,
@@ -44,7 +44,6 @@ import {
 const VOXD_BASE_URL = "https://agents.voxd.ai";
 const VOXD_AGENT_ID = "c6c212b2-6c02-4d4b-82e0-d2d869865d65";
 const VISITOR_STORAGE_KEY = "sapperton-school:visitor-id";
-const ASSISTANT_ENABLED_STORAGE_KEY = "sapperton-school:assistant-enabled";
 const CHAT_BOTTOM_THRESHOLD = 72;
 const MAX_ATTACHMENTS = 10;
 const MAX_ATTACHMENT_BYTES = 50 * 1024 * 1024;
@@ -278,8 +277,6 @@ function ChatText({ text }: { text: string }) {
 
 export default function SchoolAssistant() {
   const router = useRouter();
-  const pathname = usePathname();
-  const [isEnabled, setIsEnabled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -331,26 +328,14 @@ export default function SchoolAssistant() {
   );
 
   useEffect(() => {
-    const isHomePage = pathname === "/";
-    const wasEnabled =
-      localStorage.getItem(ASSISTANT_ENABLED_STORAGE_KEY) === "enabled";
-
-    if (isHomePage) {
-      localStorage.setItem(ASSISTANT_ENABLED_STORAGE_KEY, "enabled");
-    }
-
-    setIsEnabled(wasEnabled || isHomePage);
-  }, [pathname]);
-
-  useEffect(() => {
-    if (!isEnabled || isOpen) return;
+    if (isOpen) return;
 
     const interval = window.setInterval(() => {
       setSuggestionIndex((current) => (current + 1) % suggestions.length);
     }, 5000);
 
     return () => window.clearInterval(interval);
-  }, [isEnabled, isOpen]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -493,14 +478,12 @@ export default function SchoolAssistant() {
   }, [clientTools, resetActivity]);
 
   useEffect(() => {
-    if (!isEnabled) return;
-
     void initialise();
     return () => {
       chatRef.current?.stop();
       if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
     };
-  }, [initialise, isEnabled]);
+  }, [initialise]);
 
   const streamRun = useCallback(
     async (chat: VoxdChat, currentConversationId: string, runId: string) => {
@@ -691,8 +674,6 @@ export default function SchoolAssistant() {
 
   const hasConversation = messages.length > 0 || Boolean(streamedText);
   const currentSuggestion = suggestions[suggestionIndex];
-
-  if (!isEnabled) return null;
 
   return (
     <>
