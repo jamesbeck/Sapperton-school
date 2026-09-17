@@ -5,8 +5,10 @@ import {
   reduceActivityState,
   shouldShowActivity,
   VoxdChat,
+  type VoxdFilePart,
   type VoxdActivityState,
   type VoxdMessage,
+  type VoxdMessagePart,
   type VoxdRunEvent,
 } from "@/utils/voxdBrowser";
 import {
@@ -16,9 +18,14 @@ import {
 import {
   ArrowUp,
   Check,
+  Download,
+  FileText,
+  ImageIcon,
   MessageCircleQuestion,
+  Paperclip,
   RefreshCw,
   Square,
+  UploadCloud,
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -39,6 +46,8 @@ const VOXD_AGENT_ID = "c6c212b2-6c02-4d4b-82e0-d2d869865d65";
 const VISITOR_STORAGE_KEY = "sapperton-school:visitor-id";
 const ASSISTANT_PREVIEW_STORAGE_KEY = "sapperton-school:assistant-preview";
 const CHAT_BOTTOM_THRESHOLD = 72;
+const MAX_ATTACHMENTS = 10;
+const MAX_ATTACHMENT_BYTES = 50 * 1024 * 1024;
 
 const suggestions = [
   "When are the next term dates?",
@@ -97,8 +106,68 @@ function navigationPath(input: Record<string, unknown>) {
   }
 }
 
-function messageText(message: VoxdMessage) {
-  return message.parts.map((part) => part.text).join("\n");
+function formatFileSize(bytes: number) {
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes >= 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${bytes} B`;
+}
+
+function MessageAttachment({ part }: { part: VoxdFilePart }) {
+  if (part.kind === "image") {
+    return (
+      <a
+        href={part.url}
+        target="_blank"
+        rel="noreferrer"
+        className="group block overflow-hidden rounded-xl bg-black/5 ring-1 ring-black/10"
+      >
+        {/* The attachment host is configured in next.config.ts; dimensions come from Voxd. */}
+        <img
+          src={part.thumbnailUrl ?? part.url}
+          alt={part.filename}
+          width={part.width ?? 640}
+          height={part.height ?? 480}
+          className="max-h-64 w-full object-cover"
+        />
+        <span className="flex items-center gap-2 px-3 py-2 text-xs font-medium">
+          <ImageIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
+          <span className="min-w-0 flex-1 truncate">{part.filename}</span>
+          <Download aria-hidden="true" className="h-3.5 w-3.5 opacity-60 transition group-hover:opacity-100" />
+        </span>
+      </a>
+    );
+  }
+
+  return (
+    <a
+      href={part.url}
+      target="_blank"
+      rel="noreferrer"
+      download={part.filename}
+      className="group flex min-w-0 items-center gap-3 rounded-xl bg-black/5 px-3 py-2.5 ring-1 ring-black/10 transition hover:bg-black/10"
+    >
+      <FileText aria-hidden="true" className="h-5 w-5 shrink-0" />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-semibold">{part.filename}</span>
+        <span className="block text-xs opacity-70">{formatFileSize(part.size)}</span>
+      </span>
+      <Download aria-hidden="true" className="h-4 w-4 shrink-0 opacity-60 transition group-hover:opacity-100" />
+    </a>
+  );
+}
+
+function MessageParts({ parts }: { parts: VoxdMessagePart[] }) {
+  return (
+    <div className="space-y-2.5">
+      {parts.map((part, index) =>
+        part.type === "text" ? (
+          part.text ? <ChatText key={`text-${index}`} text={part.text} /> : null
+        ) : (
+          <MessageAttachment key={part.id} part={part} />
+        ),
+      )}
+    </div>
+  );
 }
 
 function InlineText({ text }: { text: string }) {
@@ -216,6 +285,8 @@ export default function SchoolAssistant() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<VoxdMessage[]>([]);
   const [draft, setDraft] = useState("");
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [isDraggingFiles, setIsDraggingFiles] = useState(false);
   const [streamedText, setStreamedText] = useState("");
   const [assistantStatus, setAssistantStatus] = useState(
     "Getting things ready…",
@@ -224,7 +295,7 @@ export default function SchoolAssistant() {
     string | null
   >(null);
   const [status, setStatus] = useState<
-    "starting" | "ready" | "thinking" | "error"
+    "starting" | "ready" | "uploading" | "thinking" | "error"
   >("starting");
   const [error, setError] = useState<string | null>(null);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
@@ -234,6 +305,7 @@ export default function SchoolAssistant() {
   const autoScrollPausedRef = useRef(false);
   const autoScrollUntilRef = useRef(0);
   const touchYRef = useRef<number | null>(null);
+  const dragDepthRef = useRef(0);
   const activityRef = useRef<VoxdActivityState>(createActivityState());
   const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const launcherRef = useRef<HTMLButtonElement | null>(null);
@@ -382,6 +454,7 @@ export default function SchoolAssistant() {
     setError(null);
     setAssistantStatus("Getting things ready…");
     setMessages([]);
+    setPendingFiles([]);
     setStreamedText("");
 
     try {
@@ -495,6 +568,7 @@ export default function SchoolAssistant() {
       chat.rememberConversation(conversation.id);
       setConversationId(conversation.id);
       setMessages([]);
+      setPendingFiles([]);
       setStreamedText("");
       setAssistantStatus("Ready to help");
       setStatus("ready");
@@ -509,36 +583,82 @@ export default function SchoolAssistant() {
     }
   };
 
-  const sendMessage = async (text: string) => {
+  const addFiles = useCallback((files: File[]) => {
+    if (files.length === 0) return;
+
+    const oversized = files.find((file) => file.size > MAX_ATTACHMENT_BYTES);
+    if (oversized) {
+      setError(`${oversized.name} is larger than the 50 MB upload limit.`);
+      return;
+    }
+
+    const empty = files.find((file) => file.size === 0);
+    if (empty) {
+      setError(`${empty.name} is empty and cannot be uploaded.`);
+      return;
+    }
+
+    setPendingFiles((current) => {
+      const available = MAX_ATTACHMENTS - current.length;
+      if (files.length > available) {
+        setError(`You can attach up to ${MAX_ATTACHMENTS} files to one message.`);
+      } else {
+        setError(null);
+      }
+      return [...current, ...files.slice(0, Math.max(available, 0))];
+    });
+  }, []);
+
+  const sendMessage = async (text: string, files = pendingFiles) => {
     const cleanText = text.trim();
     const chat = chatRef.current;
-    if (!cleanText || !chat || !conversationId || status !== "ready") return;
-
-    const optimisticMessage: VoxdMessage = {
-      id: `local-${crypto.randomUUID()}`,
-      role: "user",
-      parts: [{ type: "text", text: cleanText }],
-    };
+    if (
+      (!cleanText && files.length === 0) ||
+      !chat ||
+      !conversationId ||
+      status !== "ready"
+    ) return;
 
     autoScrollPausedRef.current = false;
     followLatestRef.current = true;
-    setMessages((current) => [...current, optimisticMessage]);
-    setDraft("");
     setError(null);
     setStreamedText("");
-    setStatus("thinking");
+    setStatus(files.length > 0 ? "uploading" : "thinking");
     resetActivity();
-    setAssistantStatus("Thinking…");
+    setAssistantStatus(files.length > 0 ? "Uploading files…" : "Thinking…");
 
+    let optimisticMessageId: string | null = null;
     try {
-      const queued = await chat.sendMessage(conversationId, cleanText);
+      const uploaded = await Promise.all(
+        files.map((file) => chat.uploadAttachment(conversationId, file)),
+      );
+      const optimisticMessage: VoxdMessage = {
+        id: `local-${crypto.randomUUID()}`,
+        role: "user",
+        parts: [
+          ...(cleanText ? [{ type: "text" as const, text: cleanText }] : []),
+          ...uploaded,
+        ],
+      };
+      optimisticMessageId = optimisticMessage.id;
+
+      setMessages((current) => [...current, optimisticMessage]);
+      setDraft("");
+      setPendingFiles([]);
+      setStatus("thinking");
+      setAssistantStatus("Thinking…");
+
+      const queued = await chat.sendMessage(conversationId, cleanText, uploaded);
       setActiveRunId(queued.run.id);
       void streamRun(chat, conversationId, queued.run.id);
     } catch (cause) {
-      setMessages((current) =>
-        current.filter((item) => item.id !== optimisticMessage.id),
-      );
+      if (optimisticMessageId) {
+        setMessages((current) =>
+          current.filter((message) => message.id !== optimisticMessageId),
+        );
+      }
       setDraft(cleanText);
+      setPendingFiles(files);
       setStatus("ready");
       resetActivity();
       setAssistantStatus("Ready to help");
@@ -597,8 +717,44 @@ export default function SchoolAssistant() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              onDragEnter={(event) => {
+                if (!event.dataTransfer.types.includes("Files")) return;
+                event.preventDefault();
+                dragDepthRef.current += 1;
+                setIsDraggingFiles(true);
+              }}
+              onDragOver={(event) => {
+                if (!event.dataTransfer.types.includes("Files")) return;
+                event.preventDefault();
+                event.dataTransfer.dropEffect = "copy";
+              }}
+              onDragLeave={(event) => {
+                if (!event.dataTransfer.types.includes("Files")) return;
+                event.preventDefault();
+                dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+                if (dragDepthRef.current === 0) setIsDraggingFiles(false);
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                dragDepthRef.current = 0;
+                setIsDraggingFiles(false);
+                if (status === "ready") addFiles(Array.from(event.dataTransfer.files));
+              }}
               className="absolute inset-0 flex min-h-0 flex-col overflow-hidden bg-[#f7f8f5] shadow-[-24px_0_70px_rgba(10,35,28,0.22)] sm:inset-y-3 sm:left-auto sm:right-3 sm:w-[min(30rem,calc(100vw-1.5rem))] sm:rounded-[1.5rem] sm:ring-1 sm:ring-black/10"
             >
+              {isDraggingFiles ? (
+                <div className="pointer-events-none absolute inset-3 z-30 flex items-center justify-center rounded-[1.25rem] border-2 border-dashed border-sapperton-green bg-white/95 shadow-xl">
+                  <div className="flex flex-col items-center gap-3 px-6 text-center text-sapperton-green">
+                    <span className="flex h-14 w-14 items-center justify-center rounded-full bg-sapperton-green/10">
+                      <UploadCloud aria-hidden="true" className="h-7 w-7" />
+                    </span>
+                    <span>
+                      <strong className="block text-base">Drop files to attach</strong>
+                      <span className="mt-1 block text-xs text-slate-500">Up to 10 files, 50 MB each</span>
+                    </span>
+                  </div>
+                </div>
+              ) : null}
               <div className="flex items-center justify-between border-b border-black/8 bg-white px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5 sm:py-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sapperton-green text-white shadow-sm">
@@ -711,7 +867,7 @@ export default function SchoolAssistant() {
                       <div
                         className={`min-w-0 max-w-[88%] overflow-hidden rounded-2xl px-4 py-3 text-[0.95rem] leading-6 shadow-sm [overflow-wrap:anywhere] sm:max-w-[78%] ${message.role === "user" ? "rounded-br-md bg-sapperton-green text-white" : "rounded-tl-md bg-white text-slate-700 ring-1 ring-black/5"}`}
                       >
-                        <ChatText text={messageText(message)} />
+                        <MessageParts parts={message.parts} />
                       </div>
                     </div>
                   ))}
@@ -772,6 +928,33 @@ export default function SchoolAssistant() {
                 ) : null}
               </div>
             ) : null}
+            {pendingFiles.length > 0 ? (
+              <div className="mb-2.5 flex max-h-28 flex-wrap gap-2 overflow-y-auto" aria-label="Files ready to attach">
+                {pendingFiles.map((file, index) => (
+                  <span
+                    key={`${file.name}-${file.size}-${file.lastModified}-${index}`}
+                    className="flex min-w-0 max-w-full items-center gap-2 rounded-lg bg-sapperton-green/8 py-1.5 pl-2.5 pr-1.5 text-xs text-[#285d4c] ring-1 ring-sapperton-green/15"
+                  >
+                    {file.type.startsWith("image/") ? (
+                      <ImageIcon aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                    ) : (
+                      <FileText aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                    )}
+                    <span className="max-w-48 truncate font-medium">{file.name}</span>
+                    <span className="shrink-0 text-slate-500">{formatFileSize(file.size)}</span>
+                    <button
+                      type="button"
+                      onClick={() => setPendingFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+                      disabled={status !== "ready"}
+                      aria-label={`Remove ${file.name}`}
+                      className="rounded-md p-1 text-slate-500 transition hover:bg-white hover:text-slate-800 disabled:opacity-40"
+                    >
+                      <X aria-hidden="true" className="h-3.5 w-3.5" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            ) : null}
             <form
               onSubmit={handleSubmit}
               className="flex items-end gap-2 rounded-2xl border border-slate-200 bg-[#f7f8f5] p-2 focus-within:border-sapperton-green/50 focus-within:ring-3 focus-within:ring-sapperton-green/10"
@@ -779,18 +962,39 @@ export default function SchoolAssistant() {
               <label htmlFor="school-chat-message" className="sr-only">
                 Ask the Sapperton School assistant
               </label>
+              <label
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-500 transition ${status === "ready" ? "cursor-pointer hover:bg-white hover:text-sapperton-green" : "cursor-not-allowed opacity-40"}`}
+                aria-label="Attach files"
+                title="Attach files"
+              >
+                <Paperclip aria-hidden="true" className="h-5 w-5" />
+                <input
+                  type="file"
+                  multiple
+                  disabled={status !== "ready"}
+                  className="sr-only"
+                  onChange={(event) => {
+                    addFiles(Array.from(event.target.files ?? []));
+                    event.currentTarget.value = "";
+                  }}
+                />
+              </label>
               <textarea
                 id="school-chat-message"
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
                 onKeyDown={handleKeyDown}
-                disabled={status === "starting" || status === "error"}
+                disabled={status !== "ready"}
                 rows={1}
                 maxLength={4000}
                 placeholder={
                   status === "starting"
                     ? "Connecting to the assistant…"
-                    : "Ask a question about Sapperton…"
+                    : status === "uploading"
+                      ? "Uploading files…"
+                      : status === "thinking"
+                        ? "Waiting for the assistant…"
+                        : "Ask a question or attach files…"
                 }
                 className="max-h-32 min-h-11 flex-1 resize-none bg-transparent px-2 py-2.5 text-base leading-6 text-slate-800 outline-none placeholder:text-slate-400 disabled:cursor-not-allowed"
               />
@@ -806,7 +1010,7 @@ export default function SchoolAssistant() {
               ) : (
                 <button
                   type="submit"
-                  disabled={!draft.trim() || status !== "ready"}
+                  disabled={(!draft.trim() && pendingFiles.length === 0) || status !== "ready"}
                   className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sapperton-green text-white shadow-sm transition hover:bg-[#285d4c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sapperton-green disabled:cursor-not-allowed disabled:opacity-40"
                   aria-label="Send message"
                 >

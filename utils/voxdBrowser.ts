@@ -1,7 +1,27 @@
+export type VoxdTextPart = { type: "text"; text: string };
+
+export type VoxdFilePart = {
+  type: "file";
+  id: string;
+  kind: "image" | "document";
+  mediaType: string;
+  filename: string;
+  url: string;
+  thumbnailUrl: string | null;
+  size: number;
+  width: number | null;
+  height: number | null;
+  extractedText: string | null;
+  storageKey: string;
+  signature: string;
+};
+
+export type VoxdMessagePart = VoxdTextPart | VoxdFilePart;
+
 export type VoxdMessage = {
   id: string;
   role: "user" | "assistant";
-  parts: Array<{ type: "text"; text: string }>;
+  parts: VoxdMessagePart[];
 };
 
 export type VoxdConversation = {
@@ -349,7 +369,41 @@ export class VoxdChat {
     );
   }
 
-  async sendMessage(conversationId: string, text: string) {
+  async uploadAttachment(conversationId: string, file: File) {
+    await this.ensureFreshToken();
+    const form = new FormData();
+    form.append("file", file, file.name);
+
+    const upload = async () =>
+      fetch(
+        `${this.baseUrl}/chat/v1/conversations/${conversationId}/attachments`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${this.token}` },
+          body: form,
+        },
+      );
+
+    let response = await upload();
+    if (response.status === 401) {
+      await this.renewFromCustomerBackend();
+      response = await upload();
+    }
+
+    const payload = await readResponse<VoxdFilePart>(response);
+    return payload.data;
+  }
+
+  async sendMessage(
+    conversationId: string,
+    text: string,
+    files: VoxdFilePart[] = [],
+  ) {
+    const parts: VoxdMessagePart[] = [
+      ...(text ? [{ type: "text" as const, text }] : []),
+      ...files,
+    ];
+
     return this.request<{
       message: VoxdMessage;
       run: { id: string };
@@ -357,7 +411,7 @@ export class VoxdChat {
     }>(`/chat/v1/conversations/${conversationId}/messages`, {
       method: "POST",
       headers: { "Idempotency-Key": crypto.randomUUID() },
-      body: JSON.stringify({ parts: [{ type: "text", text }] }),
+      body: JSON.stringify({ parts }),
     });
   }
 
