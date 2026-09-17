@@ -12,8 +12,15 @@ import payload from "@/payload";
 import Link from "next/link";
 import { CalendarDays } from "lucide-react";
 import AdmissionsPopup from "@/components/admissionsPopup";
+import type { Metadata } from "next";
 
 export const revalidate = 30;
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: "/",
+  },
+};
 
 export default async function Home({}) {
   //get headteacher global

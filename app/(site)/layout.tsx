@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { geistSans, geistMono, bodoniModa } from "@/fonts";
 import "./globals.css";
 import Header from "@/components/header";
@@ -15,9 +15,83 @@ export const revalidate = 30;
 
 const payload = await getPayload({ config: configPromise });
 
+const siteName = "Sapperton Church of England Primary School";
+const siteDescription =
+  "A warm village school in the heart of the Cotswolds, nurturing faith, inspiring success and helping every child flourish.";
+
 export const metadata: Metadata = {
-  title: "Sapperton Church of England Primary School",
-  description: "Sapperton Church of England Primary School",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://www.sappertonschool.org"
+  ),
+  title: {
+    default: siteName,
+    template: `%s | Sapperton C of E Primary School`,
+  },
+  description: siteDescription,
+  applicationName: "Sapperton C of E Primary School",
+  keywords: [
+    "Sapperton Primary School",
+    "Sapperton C of E Primary School",
+    "primary school Gloucestershire",
+    "primary school Cotswolds",
+    "Church of England primary school",
+  ],
+  authors: [{ name: siteName, url: "/" }],
+  creator: siteName,
+  publisher: siteName,
+  category: "education",
+  referrer: "origin-when-cross-origin",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_GB",
+    siteName,
+    title: siteName,
+    description: siteDescription,
+    images: [
+      {
+        url: "/share-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Sapperton Church of England Primary School pupils outdoors, with the school name and motto",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteName,
+    description: siteDescription,
+    images: [
+      {
+        url: "/share-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Sapperton Church of England Primary School pupils outdoors, with the school name and motto",
+      },
+    ],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#347560",
+  colorScheme: "light",
 };
 
 export default async function RootLayout({
