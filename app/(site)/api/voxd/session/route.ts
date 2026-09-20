@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { allowedVoxdClientTools } from "@/utils/voxdClientTools";
+import {
+  getVoxdExecutionMode,
+  getVoxdResumeCookieName,
+} from "@/utils/voxdMode";
 
 const DEFAULT_VOXD_URL = "https://agents.voxd.ai";
 const DEFAULT_AGENT_ID = "c6c212b2-6c02-4d4b-82e0-d2d869865d65";
-const RESUME_COOKIE = "sapperton_voxd_resume";
+const LEGACY_RESUME_COOKIE = "sapperton_voxd_resume";
 const BROWSER_TOKEN_TTL_SECONDS = 900;
 const RESUME_TOKEN_TTL_SECONDS = 60 * 60 * 24 * 30;
 
@@ -45,6 +49,8 @@ export async function POST(request: NextRequest) {
   const apiKey = process.env.VOXD_API_KEY;
   const baseUrl = (process.env.VOXD_BASE_URL || DEFAULT_VOXD_URL).replace(/\/$/, "");
   const agentId = process.env.VOXD_AGENT_ID || DEFAULT_AGENT_ID;
+  const mode = getVoxdExecutionMode();
+  const resumeCookie = getVoxdResumeCookieName(mode);
 
   if (!apiKey) {
     return NextResponse.json(
@@ -61,7 +67,7 @@ export async function POST(request: NextRequest) {
   }
 
   const allowedOrigin = getAllowedOrigin(request);
-  const resumeToken = request.cookies.get(RESUME_COOKIE)?.value;
+  const resumeToken = request.cookies.get(resumeCookie)?.value;
 
   try {
     let voxdResponse: Response | null = null;
@@ -87,6 +93,7 @@ export async function POST(request: NextRequest) {
     ) {
       voxdResponse = await callVoxd(baseUrl, apiKey, "/v1/client-sessions", {
         agentId,
+        mode,
         allowedOrigin,
         ttlSeconds: BROWSER_TOKEN_TTL_SECONDS,
         resumeTtlSeconds: RESUME_TOKEN_TTL_SECONDS,
@@ -110,6 +117,18 @@ export async function POST(request: NextRequest) {
 
     const payload = await voxdResponse.json();
     const data = payload.data;
+
+    if (data.session?.mode !== mode) {
+      console.error("VOXD client session mode mismatch", {
+        expected: mode,
+        received: data.session?.mode,
+      });
+      return NextResponse.json(
+        { error: "The school assistant is temporarily unavailable." },
+        { status: 502 },
+      );
+    }
+
     const response = NextResponse.json(
       {
         data: {
@@ -126,7 +145,7 @@ export async function POST(request: NextRequest) {
     );
 
     if (data.resumeToken) {
-      response.cookies.set(RESUME_COOKIE, data.resumeToken, {
+      response.cookies.set(resumeCookie, data.resumeToken, {
         httpOnly: true,
         secure: request.nextUrl.protocol === "https:",
         sameSite: "lax",
@@ -134,6 +153,14 @@ export async function POST(request: NextRequest) {
         maxAge: RESUME_TOKEN_TTL_SECONDS,
       });
     }
+
+    response.cookies.set(LEGACY_RESUME_COOKIE, "", {
+      httpOnly: true,
+      secure: request.nextUrl.protocol === "https:",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+    });
 
     return response;
   } catch (error) {
