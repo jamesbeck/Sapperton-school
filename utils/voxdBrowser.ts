@@ -48,7 +48,7 @@ export type VoxdRunEvent = {
   id: string;
   sequence: number;
   conversationId: string;
-  runId: string;
+  runId: string | null;
   createdAt?: string;
   type: string;
   payload: Record<string, unknown>;
@@ -121,7 +121,6 @@ export function reduceActivityState(
   if (
     [
       "message.delta",
-      "message.completed",
       "run.completed",
       "run.failed",
       "run.cancelled",
@@ -276,9 +275,10 @@ type ResumeOptions = {
 
 type StreamOptions = {
   onEvent?: (event: VoxdStreamEvent) => void;
-  onMessages?: (messages: VoxdMessage[]) => void;
-  runId?: string;
-  eventUrl?: string;
+  onMessages?: (
+    messages: VoxdMessage[],
+    event: VoxdStreamEvent,
+  ) => void;
   signal?: AbortSignal;
 };
 
@@ -470,15 +470,16 @@ export class VoxdChat {
 
   async stream(
     conversationId: string,
-    { onEvent, onMessages, runId, eventUrl, signal }: StreamOptions = {},
+    { onEvent, onMessages, signal }: StreamOptions = {},
   ) {
     conversationId = this.resolveConversationId(conversationId);
     this.abortController?.abort();
-    this.abortController = new AbortController();
+    const abortController = new AbortController();
+    this.abortController = abortController;
     if (signal) {
       signal.addEventListener(
         "abort",
-        () => this.abortController?.abort(),
+        () => abortController.abort(),
         { once: true },
       );
     }
@@ -487,41 +488,40 @@ export class VoxdChat {
     let lastEventId = Number(sessionStorage.getItem(storageKey) ?? 0);
     let delay = 500;
 
-    await this.executePendingClientTools(conversationId);
+    let pendingClientToolsChecked = false;
 
-    while (!this.abortController.signal.aborted) {
-      await this.ensureFreshToken();
-      const streamUrl = new URL(
-        eventUrl ??
+    while (!abortController.signal.aborted) {
+      try {
+        if (!pendingClientToolsChecked) {
+          await this.executePendingClientTools(conversationId);
+          pendingClientToolsChecked = true;
+        }
+        await this.ensureFreshToken();
+        const streamUrl = new URL(
           `/chat/v1/conversations/${conversationId}/events`,
-        `${this.baseUrl}/`,
-      );
-      if (streamUrl.origin !== new URL(this.baseUrl).origin) {
-        throw new Error("VOXD returned an event URL for an unexpected origin");
-      }
-      streamUrl.searchParams.set("after", String(lastEventId));
-      streamUrl.searchParams.set("live", "true");
-      const response = await fetch(
-        streamUrl,
-        {
+          `${this.baseUrl}/`,
+        );
+        streamUrl.searchParams.set("after", String(lastEventId));
+        streamUrl.searchParams.set("live", "true");
+        const response = await fetch(streamUrl, {
           headers: {
             Authorization: `Bearer ${this.token}`,
             "Last-Event-ID": String(lastEventId),
           },
-          signal: this.abortController.signal,
-        },
-      );
+          signal: abortController.signal,
+        });
 
-      if (response.status === 401) {
-        await this.renewFromCustomerBackend();
-        continue;
-      }
-      if (!response.ok || !response.body) throw await responseError(response);
+        if (response.status === 401) {
+          await this.renewFromCustomerBackend();
+          continue;
+        }
+        if (!response.ok || !response.body) throw await responseError(response);
 
-      try {
         for await (const event of parseSse(response.body)) {
-          lastEventId = Number(event.id ?? lastEventId);
+          const sequence = Number(event.data.sequence ?? event.id);
+          if (Number.isFinite(sequence)) lastEventId = sequence;
           sessionStorage.setItem(storageKey, String(lastEventId));
+          delay = 500;
           onEvent?.(event);
 
           if (event.type === "client_tool.requested") {
@@ -530,16 +530,26 @@ export class VoxdChat {
             );
           }
 
-          if (
-            ["run.completed", "run.failed", "run.cancelled"].includes(event.type) &&
-            (!runId || event.data.runId === runId)
-          ) {
-            if (onMessages) onMessages(await this.listMessages(conversationId));
-            return event;
+          if (event.type === "message.completed" && onMessages) {
+            let reloadDelay = 500;
+            while (!abortController.signal.aborted) {
+              try {
+                onMessages(await this.listMessages(conversationId), event);
+                break;
+              } catch {
+                if (abortController.signal.aborted) return null;
+                await wait(reloadDelay);
+                reloadDelay = Math.min(reloadDelay * 2, 5_000);
+              }
+            }
           }
         }
+
+        if (abortController.signal.aborted) return null;
+        await wait(delay);
+        delay = Math.min(delay * 2, 5_000);
       } catch (error) {
-        if (this.abortController.signal.aborted) return null;
+        if (abortController.signal.aborted) return null;
         await wait(delay);
         delay = Math.min(delay * 2, 5_000);
       }

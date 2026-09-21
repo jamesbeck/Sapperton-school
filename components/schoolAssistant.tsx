@@ -296,6 +296,8 @@ export default function SchoolAssistant() {
   >("starting");
   const [error, setError] = useState<string | null>(null);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
+  const activeRunIdRef = useRef<string | null>(null);
+  const awaitingRunRef = useRef(false);
   const chatRef = useRef<VoxdChat | null>(null);
   const chatWindowRef = useRef<HTMLDivElement | null>(null);
   const followLatestRef = useRef(true);
@@ -435,6 +437,9 @@ export default function SchoolAssistant() {
     autoScrollPausedRef.current = false;
     followLatestRef.current = true;
     resetActivity();
+    activeRunIdRef.current = null;
+    awaitingRunRef.current = false;
+    setActiveRunId(null);
     setStatus("starting");
     setError(null);
     setAssistantStatus("Getting things ready…");
@@ -485,59 +490,66 @@ export default function SchoolAssistant() {
     };
   }, [initialise]);
 
-  const streamRun = useCallback(
-    async (
-      chat: VoxdChat,
-      currentConversationId: string,
-      runId: string,
-      eventUrl: string,
-    ) => {
-      try {
-        const terminalEvent = await chat.stream(currentConversationId, {
-          runId,
-          eventUrl,
-          onEvent: (streamEvent) => {
-            const event: VoxdRunEvent = streamEvent.data;
-            if (event.runId !== runId) return;
+  useEffect(() => {
+    const chat = chatRef.current;
+    if (!chat || !conversationId) return;
 
-            applyActivityEvent(streamEvent);
+    const controller = new AbortController();
+    void chat.stream(conversationId, {
+      signal: controller.signal,
+      onEvent: (streamEvent) => {
+        const event: VoxdRunEvent = streamEvent.data;
+        let currentRunId = activeRunIdRef.current;
 
-            if (event.type === "message.delta") {
-              const delta = event.payload.delta;
-              if (typeof delta === "string") {
-                setStreamedText((current) => current + delta);
-              }
-            }
-          },
-          onMessages: (canonicalMessages) => {
-            setMessages(canonicalMessages);
-            setStreamedText("");
-          },
-        });
-
-        if (terminalEvent?.type === "run.completed") {
-          setAssistantStatus("Ready to help");
-          setError(null);
-        } else if (terminalEvent?.type === "run.cancelled") {
-          setAssistantStatus("Response stopped");
-        } else if (terminalEvent?.type === "run.failed") {
-          throw new Error("I couldn’t complete that response. Please try again.");
+        if (!currentRunId && awaitingRunRef.current && event.runId) {
+          currentRunId = event.runId;
+          activeRunIdRef.current = event.runId;
+          setActiveRunId(event.runId);
         }
-      } catch (cause) {
-        resetActivity();
-        setAssistantStatus("Ready to help");
-        setError(
-          cause instanceof Error
-            ? cause.message
-            : "The response was interrupted. Please try again.",
-        );
-      } finally {
-        setActiveRunId(null);
-        setStatus("ready");
-      }
-    },
-    [applyActivityEvent, resetActivity],
-  );
+
+        if (event.runId && event.runId === currentRunId) {
+          applyActivityEvent(streamEvent);
+
+          if (event.type === "message.delta") {
+            const delta = event.payload.delta;
+            if (typeof delta === "string") {
+              setStreamedText((current) => current + delta);
+            }
+          }
+        }
+
+        if (
+          currentRunId &&
+          event.runId === currentRunId &&
+          ["run.completed", "run.failed", "run.cancelled"].includes(event.type)
+        ) {
+          activeRunIdRef.current = null;
+          awaitingRunRef.current = false;
+          setActiveRunId(null);
+          setStatus("ready");
+          resetActivity();
+
+          if (event.type === "run.completed") {
+            setAssistantStatus("Ready to help");
+            setError(null);
+          } else if (event.type === "run.cancelled") {
+            setAssistantStatus("Response stopped");
+          } else {
+            setAssistantStatus("Ready to help");
+            setError("I couldn’t complete that response. Please try again.");
+          }
+        }
+      },
+      onMessages: (canonicalMessages, completedEvent) => {
+        setMessages(canonicalMessages);
+        if (completedEvent.data.runId !== null) {
+          setStreamedText("");
+        }
+      },
+    });
+
+    return () => controller.abort();
+  }, [applyActivityEvent, conversationId, resetActivity]);
 
   const startNewChat = async () => {
     const chat = chatRef.current;
@@ -548,6 +560,9 @@ export default function SchoolAssistant() {
     autoScrollPausedRef.current = false;
     followLatestRef.current = true;
     resetActivity();
+    activeRunIdRef.current = null;
+    awaitingRunRef.current = false;
+    setActiveRunId(null);
     setAssistantStatus("Starting a new chat…");
 
     try {
@@ -637,19 +652,17 @@ export default function SchoolAssistant() {
       setStatus("thinking");
       setAssistantStatus("Thinking…");
 
+      awaitingRunRef.current = true;
       const queued = await chat.sendMessage(conversationId, cleanText, uploaded);
       const activeConversationId = queued.conversation.id;
       setConversationId(activeConversationId);
       if (activeConversationId !== conversationId) {
         setMessages([optimisticMessage]);
       }
-      setActiveRunId(queued.run.id);
-      void streamRun(
-        chat,
-        activeConversationId,
-        queued.run.id,
-        queued.eventUrl,
-      );
+      if (awaitingRunRef.current) {
+        setActiveRunId(queued.run.id);
+        activeRunIdRef.current = queued.run.id;
+      }
     } catch (cause) {
       if (optimisticMessageId) {
         setMessages((current) =>
@@ -660,6 +673,9 @@ export default function SchoolAssistant() {
       setPendingFiles(files);
       setStatus("ready");
       resetActivity();
+      activeRunIdRef.current = null;
+      awaitingRunRef.current = false;
+      setActiveRunId(null);
       setAssistantStatus("Ready to help");
       setError(
         cause instanceof Error
