@@ -27,7 +27,21 @@ export type VoxdMessage = {
 export type VoxdConversation = {
   id: string;
   title?: string | null;
+  lastClientMessageAt?: string | null;
+  sessionExpiresAt?: string | null;
+  sessionTimedOut?: boolean;
 };
+
+export function isConversationTimedOut(
+  conversation: VoxdConversation | null | undefined,
+  at = Date.now(),
+) {
+  return Boolean(
+    conversation?.sessionTimedOut ||
+      (conversation?.sessionExpiresAt &&
+        Date.parse(conversation.sessionExpiresAt) <= at),
+  );
+}
 
 export type VoxdRunEvent = {
   schemaVersion: number;
@@ -264,6 +278,7 @@ type StreamOptions = {
   onEvent?: (event: VoxdStreamEvent) => void;
   onMessages?: (messages: VoxdMessage[]) => void;
   runId?: string;
+  eventUrl?: string;
   signal?: AbortSignal;
 };
 
@@ -278,6 +293,7 @@ export class VoxdChat {
   private executingClientToolIds = new Set<string>();
   private completedClientToolIds = new Set<string>();
   private pendingClientToolResults = new Map<string, VoxdClientToolResult>();
+  private conversationAliases = new Map<string, string>();
   private abortController: AbortController | null = null;
 
   constructor({
@@ -341,8 +357,12 @@ export class VoxdChat {
     const storageKey = `voxd:${agentId}:conversation`;
     const rememberedId = localStorage.getItem(storageKey);
     const resumable = data.conversations ?? (data.conversation ? [data.conversation] : []);
+    const remembered =
+      resumable.find((item) => item.id === rememberedId) ?? null;
     let conversation =
-      resumable.find((item) => item.id === rememberedId) ?? resumable[0] ?? null;
+      remembered && !isConversationTimedOut(remembered)
+        ? remembered
+        : resumable.find((item) => !isConversationTimedOut(item)) ?? null;
 
     if (!conversation) {
       conversation = await chat.createConversation(conversationTitle);
@@ -364,12 +384,14 @@ export class VoxdChat {
   }
 
   async listMessages(conversationId: string) {
+    const activeId = this.resolveConversationId(conversationId);
     return this.request<VoxdMessage[]>(
-      `/chat/v1/conversations/${conversationId}/messages`,
+      `/chat/v1/conversations/${activeId}/messages`,
     );
   }
 
   async uploadAttachment(conversationId: string, file: File) {
+    conversationId = this.resolveConversationId(conversationId);
     await this.ensureFreshToken();
     const form = new FormData();
     form.append("file", file, file.name);
@@ -399,20 +421,34 @@ export class VoxdChat {
     text: string,
     files: VoxdFilePart[] = [],
   ) {
+    const requestedId = conversationId;
+    const activeId = this.resolveConversationId(conversationId);
     const parts: VoxdMessagePart[] = [
       ...(text ? [{ type: "text" as const, text }] : []),
       ...files,
     ];
 
-    return this.request<{
+    const result = await this.request<{
+      conversation: VoxdConversation;
       message: VoxdMessage;
       run: { id: string };
       eventUrl: string;
-    }>(`/chat/v1/conversations/${conversationId}/messages`, {
+    }>(`/chat/v1/conversations/${activeId}/messages`, {
       method: "POST",
       headers: { "Idempotency-Key": crypto.randomUUID() },
       body: JSON.stringify({ parts }),
     });
+
+    const nextId = result.conversation?.id;
+    if (nextId) {
+      if (nextId !== activeId) {
+        this.conversationAliases.set(requestedId, nextId);
+        this.conversationAliases.set(activeId, nextId);
+      }
+      this.rememberConversation(nextId);
+    }
+
+    return result;
   }
 
   async cancel(runId: string) {
@@ -434,8 +470,9 @@ export class VoxdChat {
 
   async stream(
     conversationId: string,
-    { onEvent, onMessages, runId, signal }: StreamOptions = {},
+    { onEvent, onMessages, runId, eventUrl, signal }: StreamOptions = {},
   ) {
+    conversationId = this.resolveConversationId(conversationId);
     this.abortController?.abort();
     this.abortController = new AbortController();
     if (signal) {
@@ -454,8 +491,18 @@ export class VoxdChat {
 
     while (!this.abortController.signal.aborted) {
       await this.ensureFreshToken();
+      const streamUrl = new URL(
+        eventUrl ??
+          `/chat/v1/conversations/${conversationId}/events`,
+        `${this.baseUrl}/`,
+      );
+      if (streamUrl.origin !== new URL(this.baseUrl).origin) {
+        throw new Error("VOXD returned an event URL for an unexpected origin");
+      }
+      streamUrl.searchParams.set("after", String(lastEventId));
+      streamUrl.searchParams.set("live", "true");
       const response = await fetch(
-        `${this.baseUrl}/chat/v1/conversations/${conversationId}/events?after=${lastEventId}&live=true`,
+        streamUrl,
         {
           headers: {
             Authorization: `Bearer ${this.token}`,
@@ -502,6 +549,7 @@ export class VoxdChat {
   }
 
   private async executePendingClientTools(conversationId: string) {
+    conversationId = this.resolveConversationId(conversationId);
     const calls = await this.request<VoxdClientToolCall[]>(
       `/chat/v1/conversations/${conversationId}/client-tool-calls`,
     );
@@ -618,6 +666,18 @@ export class VoxdChat {
       body: JSON.stringify(result),
       keepalive: true,
     });
+  }
+
+  private resolveConversationId(conversationId: string) {
+    let resolved = conversationId;
+    const visited = new Set<string>();
+
+    while (this.conversationAliases.has(resolved) && !visited.has(resolved)) {
+      visited.add(resolved);
+      resolved = this.conversationAliases.get(resolved) ?? resolved;
+    }
+
+    return resolved;
   }
 
   stop() {

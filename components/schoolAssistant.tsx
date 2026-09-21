@@ -486,10 +486,16 @@ export default function SchoolAssistant() {
   }, [initialise]);
 
   const streamRun = useCallback(
-    async (chat: VoxdChat, currentConversationId: string, runId: string) => {
+    async (
+      chat: VoxdChat,
+      currentConversationId: string,
+      runId: string,
+      eventUrl: string,
+    ) => {
       try {
         const terminalEvent = await chat.stream(currentConversationId, {
           runId,
+          eventUrl,
           onEvent: (streamEvent) => {
             const event: VoxdRunEvent = streamEvent.data;
             if (event.runId !== runId) return;
@@ -632,8 +638,18 @@ export default function SchoolAssistant() {
       setAssistantStatus("Thinking…");
 
       const queued = await chat.sendMessage(conversationId, cleanText, uploaded);
+      const activeConversationId = queued.conversation.id;
+      setConversationId(activeConversationId);
+      if (activeConversationId !== conversationId) {
+        setMessages([optimisticMessage]);
+      }
       setActiveRunId(queued.run.id);
-      void streamRun(chat, conversationId, queued.run.id);
+      void streamRun(
+        chat,
+        activeConversationId,
+        queued.run.id,
+        queued.eventUrl,
+      );
     } catch (cause) {
       if (optimisticMessageId) {
         setMessages((current) =>
