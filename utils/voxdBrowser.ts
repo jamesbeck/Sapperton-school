@@ -22,6 +22,11 @@ export type VoxdMessage = {
   id: string;
   role: "user" | "assistant";
   parts: VoxdMessagePart[];
+  deliveryStatus: "pending" | "sent" | "delivered" | "read" | "failed";
+  sentAt: string | null;
+  deliveredAt: string | null;
+  readAt: string | null;
+  deliveryError: unknown | null;
 };
 
 export type VoxdConversation = {
@@ -119,8 +124,11 @@ export function reduceActivityState(
       : timestamp;
 
   if (
+    event.runId &&
+    (!state.runId || event.runId === state.runId) &&
     [
       "message.delta",
+      "message.completed",
       "run.completed",
       "run.failed",
       "run.cancelled",
@@ -129,7 +137,7 @@ export function reduceActivityState(
     return createActivityState();
   }
 
-  if (["run.queued", "run.started"].includes(event.type)) {
+  if (["run.queued", "run.started", "run.resumed"].includes(event.type)) {
     return {
       ...state,
       active: true,
@@ -242,6 +250,34 @@ export type VoxdClientTool = {
 
 export type VoxdClientTools = Record<string, VoxdClientTool>;
 
+export type VoxdMessageDrafts = Record<string, string>;
+
+export function reduceMessageDrafts(
+  current: VoxdMessageDrafts,
+  streamedEvent: VoxdStreamEvent | VoxdRunEvent,
+): VoxdMessageDrafts {
+  const event = runEvent(streamedEvent);
+  if (!event.runId) return current;
+
+  if (event.type === "message.delta") {
+    const delta = event.payload?.delta;
+    if (typeof delta !== "string" || !delta) return current;
+    return {
+      ...current,
+      [event.runId]: `${current[event.runId] ?? ""}${delta}`,
+    };
+  }
+
+  if (["message.completed", "run.cancelled", "run.failed"].includes(event.type)) {
+    if (!(event.runId in current)) return current;
+    const next = { ...current };
+    delete next[event.runId];
+    return next;
+  }
+
+  return current;
+}
+
 type VoxdClientToolCall = {
   id?: string;
   callId?: string;
@@ -294,6 +330,8 @@ export class VoxdChat {
   private completedClientToolIds = new Set<string>();
   private pendingClientToolResults = new Map<string, VoxdClientToolResult>();
   private conversationAliases = new Map<string, string>();
+  private readMessageIds = new Set<string>();
+  private readingMessageIds = new Set<string>();
   private abortController: AbortController | null = null;
 
   constructor({
@@ -390,6 +428,77 @@ export class VoxdChat {
     );
   }
 
+  async markMessageRead(conversationId: string, messageId: string) {
+    if (
+      this.readMessageIds.has(messageId) ||
+      this.readingMessageIds.has(messageId)
+    ) {
+      return null;
+    }
+
+    this.readingMessageIds.add(messageId);
+    try {
+      const activeId = this.resolveConversationId(conversationId);
+      const message = await this.request<VoxdMessage>(
+        `/chat/v1/conversations/${activeId}/messages/${messageId}/read`,
+        { method: "POST", body: "{}", keepalive: true },
+      );
+      this.readMessageIds.add(messageId);
+      return message;
+    } finally {
+      this.readingMessageIds.delete(messageId);
+    }
+  }
+
+  observeMessageRead(
+    conversationId: string,
+    messageId: string,
+    element: Element,
+    { threshold = 0.5, minVisibleMs = 500 } = {},
+  ) {
+    if (!element || typeof IntersectionObserver === "undefined") return () => {};
+
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let visible = false;
+    const clearTimer = () => {
+      if (timer !== null) clearTimeout(timer);
+      timer = null;
+    };
+    const markAfterDelay = () => {
+      clearTimer();
+      if (
+        !visible ||
+        document.visibilityState !== "visible" ||
+        this.readMessageIds.has(messageId)
+      ) {
+        return;
+      }
+      timer = setTimeout(() => {
+        if (!visible || document.visibilityState !== "visible") return;
+        void this.markMessageRead(conversationId, messageId)
+          .then(() => cleanup())
+          .catch(() => {});
+      }, minVisibleMs);
+    };
+    const observer = new IntersectionObserver((entries) => {
+      const entry = entries.find((item) => item.target === element);
+      visible = Boolean(
+        entry?.isIntersecting && entry.intersectionRatio >= threshold,
+      );
+      markAfterDelay();
+    }, { threshold });
+    const onVisibilityChange = () => markAfterDelay();
+    const cleanup = () => {
+      clearTimer();
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+
+    observer.observe(element);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return cleanup;
+  }
+
   async uploadAttachment(conversationId: string, file: File) {
     conversationId = this.resolveConversationId(conversationId);
     await this.ensureFreshToken();
@@ -432,6 +541,7 @@ export class VoxdChat {
       conversation: VoxdConversation;
       message: VoxdMessage;
       run: { id: string };
+      supersededRunIds: string[];
       eventUrl: string;
     }>(`/chat/v1/conversations/${activeId}/messages`, {
       method: "POST",
@@ -542,7 +652,12 @@ export class VoxdChat {
             );
           }
 
-          if (event.type === "message.completed" && onMessages) {
+          if (
+            ["message.completed", "run.failed", "run.cancelled"].includes(
+              event.type,
+            ) &&
+            onMessages
+          ) {
             let reloadDelay = 500;
             while (!abortController.signal.aborted) {
               try {

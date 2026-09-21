@@ -4,6 +4,7 @@ import {
   createActivityState,
   isConversationTimedOut,
   reduceActivityState,
+  reduceMessageDrafts,
   VoxdChat,
   type VoxdConversation,
 } from "./voxdBrowser";
@@ -100,6 +101,63 @@ test("terminal run events clear progress", () => {
       payload: {},
     });
     assert.deepEqual(next, createActivityState());
+  }
+});
+
+test("keeps streamed assistant drafts isolated by run", () => {
+  const event = (runId: string, type: string, payload: Record<string, unknown> = {}) => ({
+    schemaVersion: 1,
+    id: `${runId}-${type}`,
+    sequence: 1,
+    conversationId: "conversation-1",
+    runId,
+    type,
+    payload,
+  });
+
+  let drafts = reduceMessageDrafts({}, event("run-1", "message.delta", { delta: "Old" }));
+  drafts = reduceMessageDrafts(drafts, event("run-2", "message.delta", { delta: "New" }));
+  drafts = reduceMessageDrafts(drafts, event("run-1", "run.cancelled", { reason: "superseded" }));
+
+  assert.deepEqual(drafts, { "run-2": "New" });
+});
+
+test("marks a canonical assistant message read only once", async () => {
+  const originalFetch = globalThis.fetch;
+  const requests: string[] = [];
+  globalThis.fetch = async (input) => {
+    requests.push(String(input));
+    return Response.json({
+      data: {
+        id: "message-1",
+        role: "assistant",
+        parts: [],
+        deliveryStatus: "read",
+        sentAt: "2026-09-21T12:00:00.000Z",
+        deliveredAt: "2026-09-21T12:00:01.000Z",
+        readAt: "2026-09-21T12:00:02.000Z",
+        deliveryError: null,
+      },
+    });
+  };
+
+  try {
+    const chat = new VoxdChat({
+      baseUrl: "https://agents.voxd.test",
+      token: "token",
+      expiresAt: "2099-01-01T00:00:00.000Z",
+      sessionEndpoint: "/api/voxd/session",
+      agentId: "agent-1",
+    });
+
+    await chat.markMessageRead("conversation-1", "message-1");
+    await chat.markMessageRead("conversation-1", "message-1");
+
+    assert.deepEqual(requests, [
+      "https://agents.voxd.test/chat/v1/conversations/conversation-1/messages/message-1/read",
+    ]);
+  } finally {
+    globalThis.fetch = originalFetch;
   }
 });
 

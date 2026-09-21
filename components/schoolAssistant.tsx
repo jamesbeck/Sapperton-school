@@ -2,6 +2,7 @@
 
 import {
   createActivityState,
+  reduceMessageDrafts,
   reduceActivityState,
   shouldShowActivity,
   VoxdChat,
@@ -169,6 +170,45 @@ function MessageParts({ parts }: { parts: VoxdMessagePart[] }) {
   );
 }
 
+function CanonicalMessage({
+  chat,
+  conversationId,
+  message,
+}: {
+  chat: VoxdChat | null;
+  conversationId: string;
+  message: VoxdMessage;
+}) {
+  const elementRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (
+      message.role !== "assistant" ||
+      message.deliveryStatus === "read" ||
+      !chat ||
+      !elementRef.current
+    ) return;
+    return chat.observeMessageRead(
+      conversationId,
+      message.id,
+      elementRef.current,
+    );
+  }, [chat, conversationId, message.deliveryStatus, message.id, message.role]);
+
+  return (
+    <div
+      ref={elementRef}
+      className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+    >
+      <div
+        className={`min-w-0 max-w-[88%] overflow-hidden rounded-2xl px-4 py-3 text-[0.95rem] leading-6 shadow-sm [overflow-wrap:anywhere] sm:max-w-[78%] ${message.role === "user" ? "rounded-br-md bg-sapperton-green text-white" : "rounded-tl-md bg-white text-slate-700 ring-1 ring-black/5"}`}
+      >
+        <MessageParts parts={message.parts} />
+      </div>
+    </div>
+  );
+}
+
 function InlineText({ text }: { text: string }) {
   const parts = text.split(
     /(\*\*[^*]+\*\*|\[[^\]]+\]\(https?:\/\/[^)\s]+\)|https?:\/\/[^\s<]+)/g,
@@ -284,7 +324,7 @@ export default function SchoolAssistant() {
   const [draft, setDraft] = useState("");
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [isDraggingFiles, setIsDraggingFiles] = useState(false);
-  const [streamedText, setStreamedText] = useState("");
+  const [messageDrafts, setMessageDrafts] = useState<Record<string, string>>({});
   const [assistantStatus, setAssistantStatus] = useState(
     "Getting things ready…",
   );
@@ -296,6 +336,7 @@ export default function SchoolAssistant() {
   >("starting");
   const [error, setError] = useState<string | null>(null);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
+  const streamedText = activeRunId ? (messageDrafts[activeRunId] ?? "") : "";
   const activeRunIdRef = useRef<string | null>(null);
   const awaitingRunRef = useRef(false);
   const chatRef = useRef<VoxdChat | null>(null);
@@ -445,7 +486,7 @@ export default function SchoolAssistant() {
     setAssistantStatus("Getting things ready…");
     setMessages([]);
     setPendingFiles([]);
-    setStreamedText("");
+    setMessageDrafts({});
 
     try {
       let visitorId = localStorage.getItem(VISITOR_STORAGE_KEY);
@@ -510,12 +551,17 @@ export default function SchoolAssistant() {
         if (event.runId && event.runId === currentRunId) {
           applyActivityEvent(streamEvent);
 
-          if (event.type === "message.delta") {
-            const delta = event.payload.delta;
-            if (typeof delta === "string") {
-              setStreamedText((current) => current + delta);
-            }
-          }
+          setMessageDrafts((current) => reduceMessageDrafts(current, streamEvent));
+        }
+
+        if (["run.queued", "run.started", "run.resumed"].includes(event.type) && event.runId) {
+          currentRunId = event.runId;
+          activeRunIdRef.current = event.runId;
+          awaitingRunRef.current = false;
+          setActiveRunId(event.runId);
+          setStatus("thinking");
+          setAssistantStatus("Thinking…");
+          applyActivityEvent(streamEvent);
         }
 
         if (
@@ -523,18 +569,38 @@ export default function SchoolAssistant() {
           event.runId === currentRunId &&
           ["run.completed", "run.failed", "run.cancelled"].includes(event.type)
         ) {
-          activeRunIdRef.current = null;
-          awaitingRunRef.current = false;
-          setActiveRunId(null);
-          setStatus("ready");
+          setMessageDrafts((current) => reduceMessageDrafts(current, streamEvent));
           resetActivity();
 
           if (event.type === "run.completed") {
+            activeRunIdRef.current = null;
+            awaitingRunRef.current = false;
+            setActiveRunId(null);
+            setStatus("ready");
             setAssistantStatus("Ready to help");
             setError(null);
           } else if (event.type === "run.cancelled") {
-            setAssistantStatus("Response stopped");
+            const replacementRunId = event.payload.replacementRunId;
+            if (
+              event.payload.reason === "superseded" &&
+              typeof replacementRunId === "string"
+            ) {
+              activeRunIdRef.current = replacementRunId;
+              setActiveRunId(replacementRunId);
+              setStatus("thinking");
+              setAssistantStatus("Thinking…");
+            } else {
+              activeRunIdRef.current = null;
+              awaitingRunRef.current = false;
+              setActiveRunId(null);
+              setStatus("ready");
+              setAssistantStatus("Response stopped");
+            }
           } else {
+            activeRunIdRef.current = null;
+            awaitingRunRef.current = false;
+            setActiveRunId(null);
+            setStatus("ready");
             setAssistantStatus("Ready to help");
             setError("I couldn’t complete that response. Please try again.");
           }
@@ -542,9 +608,9 @@ export default function SchoolAssistant() {
       },
       onMessages: (canonicalMessages, completedEvent) => {
         setMessages(canonicalMessages);
-        if (completedEvent.data.runId !== null) {
-          setStreamedText("");
-        }
+        setMessageDrafts((current) =>
+          reduceMessageDrafts(current, completedEvent),
+        );
       },
     });
 
@@ -573,7 +639,7 @@ export default function SchoolAssistant() {
       setConversationId(conversation.id);
       setMessages([]);
       setPendingFiles([]);
-      setStreamedText("");
+      setMessageDrafts({});
       setAssistantStatus("Ready to help");
       setStatus("ready");
     } catch (cause) {
@@ -620,13 +686,12 @@ export default function SchoolAssistant() {
       (!cleanText && files.length === 0) ||
       !chat ||
       !conversationId ||
-      status !== "ready"
+      !["ready", "thinking"].includes(status)
     ) return;
 
     autoScrollPausedRef.current = false;
     followLatestRef.current = true;
     setError(null);
-    setStreamedText("");
     setStatus(files.length > 0 ? "uploading" : "thinking");
     resetActivity();
     setAssistantStatus(files.length > 0 ? "Uploading files…" : "Thinking…");
@@ -643,6 +708,11 @@ export default function SchoolAssistant() {
           ...(cleanText ? [{ type: "text" as const, text: cleanText }] : []),
           ...uploaded,
         ],
+        deliveryStatus: "read",
+        sentAt: null,
+        deliveredAt: null,
+        readAt: null,
+        deliveryError: null,
       };
       optimisticMessageId = optimisticMessage.id;
 
@@ -657,8 +727,20 @@ export default function SchoolAssistant() {
       const activeConversationId = queued.conversation.id;
       setConversationId(activeConversationId);
       if (activeConversationId !== conversationId) {
-        setMessages([optimisticMessage]);
+        setMessages([queued.message]);
+        setMessageDrafts({});
+      } else {
+        setMessages((current) =>
+          current.map((message) =>
+            message.id === optimisticMessage.id ? queued.message : message,
+          ),
+        );
       }
+      setMessageDrafts((current) => {
+        const next = { ...current };
+        for (const runId of queued.supersededRunIds ?? []) delete next[runId];
+        return next;
+      });
       if (awaitingRunRef.current) {
         setActiveRunId(queued.run.id);
         activeRunIdRef.current = queued.run.id;
@@ -671,12 +753,12 @@ export default function SchoolAssistant() {
       }
       setDraft(cleanText);
       setPendingFiles(files);
-      setStatus("ready");
-      resetActivity();
-      activeRunIdRef.current = null;
       awaitingRunRef.current = false;
-      setActiveRunId(null);
-      setAssistantStatus("Ready to help");
+      const currentRunId = activeRunIdRef.current;
+      setActiveRunId(currentRunId);
+      setStatus(currentRunId ? "thinking" : "ready");
+      setAssistantStatus(currentRunId ? "Thinking…" : "Ready to help");
+      if (!currentRunId) resetActivity();
       setError(
         cause instanceof Error
           ? cause.message
@@ -705,6 +787,7 @@ export default function SchoolAssistant() {
   };
 
   const hasConversation = messages.length > 0 || Boolean(streamedText);
+  const canCompose = status === "ready" || status === "thinking";
   const currentSuggestion = suggestions[suggestionIndex];
 
   return (
@@ -751,7 +834,7 @@ export default function SchoolAssistant() {
                 event.preventDefault();
                 dragDepthRef.current = 0;
                 setIsDraggingFiles(false);
-                if (status === "ready") addFiles(Array.from(event.dataTransfer.files));
+                if (canCompose) addFiles(Array.from(event.dataTransfer.files));
               }}
               className="absolute inset-0 flex min-h-0 flex-col overflow-hidden bg-[#f7f8f5] shadow-[-24px_0_70px_rgba(10,35,28,0.22)] sm:inset-y-3 sm:left-auto sm:right-3 sm:w-[min(30rem,calc(100vw-1.5rem))] sm:rounded-[1.5rem] sm:ring-1 sm:ring-black/10"
             >
@@ -873,16 +956,12 @@ export default function SchoolAssistant() {
               ) : (
                 <div className="space-y-5">
                   {messages.map((message) => (
-                    <div
+                    <CanonicalMessage
                       key={message.id}
-                      className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-                    >
-                      <div
-                        className={`min-w-0 max-w-[88%] overflow-hidden rounded-2xl px-4 py-3 text-[0.95rem] leading-6 shadow-sm [overflow-wrap:anywhere] sm:max-w-[78%] ${message.role === "user" ? "rounded-br-md bg-sapperton-green text-white" : "rounded-tl-md bg-white text-slate-700 ring-1 ring-black/5"}`}
-                      >
-                        <MessageParts parts={message.parts} />
-                      </div>
-                    </div>
+                      chat={chatRef.current}
+                      conversationId={conversationId!}
+                      message={message}
+                    />
                   ))}
 
                   {status === "thinking" && !visibleActivityLabel ? (
@@ -958,7 +1037,7 @@ export default function SchoolAssistant() {
                     <button
                       type="button"
                       onClick={() => setPendingFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))}
-                      disabled={status !== "ready"}
+                      disabled={!canCompose}
                       aria-label={`Remove ${file.name}`}
                       className="rounded-md p-1 text-slate-500 transition hover:bg-white hover:text-slate-800 disabled:opacity-40"
                     >
@@ -976,7 +1055,7 @@ export default function SchoolAssistant() {
                 Ask the Sapperton School assistant
               </label>
               <label
-                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-500 transition ${status === "ready" ? "cursor-pointer hover:bg-white hover:text-sapperton-green" : "cursor-not-allowed opacity-40"}`}
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-500 transition ${canCompose ? "cursor-pointer hover:bg-white hover:text-sapperton-green" : "cursor-not-allowed opacity-40"}`}
                 aria-label="Attach files"
                 title="Attach files"
               >
@@ -984,7 +1063,7 @@ export default function SchoolAssistant() {
                 <input
                   type="file"
                   multiple
-                  disabled={status !== "ready"}
+                  disabled={!canCompose}
                   className="sr-only"
                   onChange={(event) => {
                     addFiles(Array.from(event.target.files ?? []));
@@ -997,7 +1076,7 @@ export default function SchoolAssistant() {
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
                 onKeyDown={handleKeyDown}
-                disabled={status !== "ready"}
+                disabled={!canCompose}
                 rows={1}
                 maxLength={4000}
                 placeholder={
@@ -1006,7 +1085,7 @@ export default function SchoolAssistant() {
                     : status === "uploading"
                       ? "Uploading files…"
                       : status === "thinking"
-                        ? "Waiting for the assistant…"
+                        ? "Ask a follow-up while I’m working…"
                         : "Ask a question or attach files…"
                 }
                 className="max-h-32 min-h-11 flex-1 resize-none bg-transparent px-2 py-2.5 text-base leading-6 text-slate-800 outline-none placeholder:text-slate-400 disabled:cursor-not-allowed"
@@ -1020,16 +1099,15 @@ export default function SchoolAssistant() {
                 >
                   <Square aria-hidden="true" className="h-3.5 w-3.5 fill-current" />
                 </button>
-              ) : (
-                <button
-                  type="submit"
-                  disabled={(!draft.trim() && pendingFiles.length === 0) || status !== "ready"}
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sapperton-green text-white shadow-sm transition hover:bg-[#285d4c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sapperton-green disabled:cursor-not-allowed disabled:opacity-40"
-                  aria-label="Send message"
-                >
-                  <ArrowUp aria-hidden="true" className="h-5 w-5" />
-                </button>
-              )}
+              ) : null}
+              <button
+                type="submit"
+                disabled={(!draft.trim() && pendingFiles.length === 0) || !canCompose}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sapperton-green text-white shadow-sm transition hover:bg-[#285d4c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sapperton-green disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label={status === "thinking" ? "Send another message" : "Send message"}
+              >
+                <ArrowUp aria-hidden="true" className="h-5 w-5" />
+              </button>
             </form>
             <div className="mt-2.5 flex items-center justify-center gap-1.5 text-center text-[0.7rem] text-slate-400">
               <Check aria-hidden="true" className="h-3 w-3" />
