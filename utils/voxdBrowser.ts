@@ -459,13 +459,25 @@ export class VoxdChat {
   }
 
   async refresh() {
-    const data = await this.request<{ token: string; expiresAt: string }>(
-      "/chat/v1/session/refresh",
-      { method: "POST", body: JSON.stringify({ ttlSeconds: 900 }) },
-      false,
-    );
-    this.token = data.token;
-    this.expiresAt = new Date(data.expiresAt).getTime();
+    try {
+      const data = await this.request<{ token: string; expiresAt: string }>(
+        "/chat/v1/session/refresh",
+        { method: "POST", body: JSON.stringify({ ttlSeconds: 900 }) },
+        false,
+      );
+      this.token = data.token;
+      this.expiresAt = new Date(data.expiresAt).getTime();
+    } catch (cause) {
+      if (
+        cause instanceof Error &&
+        "status" in cause &&
+        cause.status === 401
+      ) {
+        await this.renewFromCustomerBackend();
+        return;
+      }
+      throw cause;
+    }
   }
 
   async stream(

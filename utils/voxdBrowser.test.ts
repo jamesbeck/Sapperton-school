@@ -204,3 +204,108 @@ test("keeps the conversation stream open after a terminal run event", async () =
     });
   }
 });
+
+test("renews through the customer backend when an expired token cannot refresh", async () => {
+  const originalFetch = globalThis.fetch;
+  const originalSessionStorage = globalThis.sessionStorage;
+  const originalWindow = globalThis.window;
+  const controller = new AbortController();
+  const requests: Array<{
+    path: string;
+    authorization: string | null;
+    credentials?: RequestCredentials;
+  }> = [];
+
+  Object.defineProperty(globalThis, "sessionStorage", {
+    configurable: true,
+    value: {
+      getItem: () => null,
+      setItem: () => undefined,
+    },
+  });
+  Object.defineProperty(globalThis, "window", {
+    configurable: true,
+    value: { location: { origin: "https://school.example" } },
+  });
+
+  globalThis.fetch = async (input, init) => {
+    const url = new URL(String(input), "https://school.example");
+    const headers = new Headers(init?.headers);
+    requests.push({
+      path: url.pathname,
+      authorization: headers.get("Authorization"),
+      credentials: init?.credentials,
+    });
+
+    if (url.pathname === "/chat/v1/session/refresh") {
+      return Response.json(
+        { error: { message: "Token expired" } },
+        { status: 401 },
+      );
+    }
+
+    if (url.pathname === "/api/voxd/session") {
+      return Response.json({
+        data: {
+          token: "replacement-token",
+          expiresAt: "2099-01-01T00:00:00.000Z",
+        },
+      });
+    }
+
+    if (url.pathname.endsWith("/client-tool-calls")) {
+      return Response.json({ data: [] });
+    }
+
+    const frame = `id: 1\nevent: message.delta\ndata: ${JSON.stringify({
+      schemaVersion: 1,
+      id: "event-1",
+      sequence: 1,
+      conversationId: "conversation-1",
+      runId: "run-1",
+      type: "message.delta",
+      payload: { delta: "Hello" },
+    })}\n\n`;
+    return new Response(frame, {
+      headers: { "Content-Type": "text/event-stream" },
+    });
+  };
+
+  try {
+    const chat = new VoxdChat({
+      baseUrl: "https://agents.voxd.test",
+      token: "expired-token",
+      expiresAt: "2000-01-01T00:00:00.000Z",
+      sessionEndpoint: "/api/voxd/session",
+      agentId: "agent-1",
+    });
+
+    await chat.stream("conversation-1", {
+      signal: controller.signal,
+      onEvent: () => controller.abort(),
+    });
+
+    assert.deepEqual(
+      requests.map(({ path }) => path),
+      [
+        "/chat/v1/session/refresh",
+        "/api/voxd/session",
+        "/chat/v1/conversations/conversation-1/client-tool-calls",
+        "/chat/v1/conversations/conversation-1/events",
+      ],
+    );
+    assert.equal(requests[1]?.credentials, "include");
+    assert.equal(requests[2]?.authorization, "Bearer replacement-token");
+    assert.equal(requests[3]?.authorization, "Bearer replacement-token");
+  } finally {
+    globalThis.fetch = originalFetch;
+    Object.defineProperty(globalThis, "sessionStorage", {
+      configurable: true,
+      value: originalSessionStorage,
+    });
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: originalWindow,
+    });
+  }
+});
