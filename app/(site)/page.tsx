@@ -11,7 +11,6 @@ import VideoSection from "@/components/videoSection";
 import payload from "@/payload";
 import Link from "next/link";
 import { CalendarDays } from "lucide-react";
-import AdmissionsPopup from "@/components/admissionsPopup";
 import type { Metadata } from "next";
 
 export const revalidate = 30;
@@ -93,7 +92,7 @@ export default async function Home({}) {
 
   return (
     <div>
-      <AdmissionsPopup />
+      {/* AdmissionsPopup is disabled; its component is retained for future announcements. */}
       <Hero words={heroWords} openDays={openDaysResult.docs} />
       <HeadMessage
         headteacherWelcome={headteacherWelcome}
