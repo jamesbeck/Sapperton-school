@@ -89,6 +89,12 @@ export default function Footer() {
               >
                 Classes
               </Link>
+              <Link
+                href="/clubs"
+                className="hover:text-white hover:underline transition-colors"
+              >
+                Clubs
+              </Link>
             </div>
           </div>
 

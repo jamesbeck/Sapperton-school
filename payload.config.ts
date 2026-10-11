@@ -92,6 +92,10 @@ export default buildConfig({
     outputFile: path.resolve(dirname, "payload-types.ts"),
   },
   db: postgresAdapter({
+    generateSchemaOutputFile: path.resolve(
+      dirname,
+      "payload-generated-schema.ts",
+    ),
     pool: {
       connectionString: process.env.DATABASE_URL || "",
     },

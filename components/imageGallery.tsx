@@ -6,7 +6,12 @@ import "react-image-gallery/styles/css/image-gallery.css";
 export default function ImageGalleryComponent({
   images,
 }: {
-  images: { original: string; thumbnail: string }[];
+  images: {
+    original: string;
+    thumbnail: string;
+    originalAlt?: string;
+    thumbnailAlt?: string;
+  }[];
 }) {
   return (
     <>

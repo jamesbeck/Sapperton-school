@@ -9,6 +9,7 @@ import Breadcrumbs from "@/components/breadcrumbs";
 import H2 from "@/components/ui/h2";
 import ImageGallery from "@/components/imageGallery";
 import StaffCard from "@/components/staffCard";
+import ClubCard from "@/components/clubCard";
 import ClassCard from "@/components/classCard";
 import NewsCard from "@/components/newsCard";
 
@@ -121,6 +122,20 @@ export default async function NewsArticlePage({
                   <ClassCard schoolClass={classData} key={classData.id} />
                 ) : null;
               })}
+            </div>
+          </div>
+        </Container>
+      )}
+      {!!article.clubs?.length && (
+        <Container colour="white">
+          <div className="flex flex-col gap-8">
+            <H2>Related Clubs</H2>
+            <div className="flex gap-8 justify-center flex-wrap">
+              {article.clubs.map((club) =>
+                typeof club === "object" && club ? (
+                  <ClubCard club={club} key={club.id} />
+                ) : null,
+              )}
             </div>
           </div>
         </Container>

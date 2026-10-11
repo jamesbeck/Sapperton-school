@@ -10,7 +10,9 @@
     "test": "tsx --test utils/*.test.ts",
     "lint": "next lint",
     "generate:types": "PAYLOAD_CONFIG_PATH=payload.config.ts payload generate:types",
-    "migrate:parent-letters": "tsx scripts/migrate-parent-letters.ts"
+    "migrate:parent-letters": "tsx scripts/migrate-parent-letters.ts",
+    "test:clubs": "node --import tsx scripts/verify-clubs.ts",
+    "migrate": "PAYLOAD_CONFIG_PATH=payload.config.ts payload migrate"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

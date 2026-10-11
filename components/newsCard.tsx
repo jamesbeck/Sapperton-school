@@ -83,6 +83,20 @@ export default function NewsCard({
                 </div>
               )}
             </div>
+            {!!article.clubs?.length && (
+              <div className="flex flex-wrap gap-1">
+                {article.clubs.map((club) =>
+                  typeof club === "object" && club ? (
+                    <span
+                      key={club.id}
+                      className="text-xs font-semibold px-2 py-1 bg-sapperton-green text-white rounded"
+                    >
+                      {club.name}
+                    </span>
+                  ) : null,
+                )}
+              </div>
+            )}
             {article.classes && article.classes.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {article.classes.map((classItem) => {

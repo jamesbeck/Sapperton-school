@@ -87,6 +87,10 @@ function navigationPath(input: Record<string, unknown>) {
       return "/events";
     case "event":
       return `/events/${requireIdentifier()}`;
+    case "clubs_index":
+      return "/clubs";
+    case "club":
+      return `/clubs/${requireIdentifier()}`;
     case "classes_index":
       return "/classes";
     case "class":

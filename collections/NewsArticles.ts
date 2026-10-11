@@ -61,6 +61,12 @@ export const NewsArticles: CollectionConfig = {
       hasMany: true,
     },
     {
+      name: "clubs",
+      type: "relationship",
+      relationTo: "clubs",
+      hasMany: true,
+    },
+    {
       name: "classes",
       type: "relationship",
       relationTo: "classes",

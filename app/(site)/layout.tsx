@@ -21,7 +21,7 @@ const siteDescription =
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "https://www.sappertonschool.org"
+    process.env.NEXT_PUBLIC_SITE_URL || "https://www.sappertonschool.org",
   ),
   title: {
     default: siteName,
@@ -99,27 +99,32 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const menuItems = await payload.find({
-    collection: "menuItems",
-    depth: 1,
-    limit: 1000,
-    sort: ["-parent", "order", "id"],
-    // id: "507f1f77bcf86cd799439011",
-  });
-
-  const classes = await payload.find({
-    collection: "classes",
-    depth: 1,
-    limit: 1000,
-    sort: "order",
-  });
-
-  const footerMenuItems = await payload.find({
-    collection: "footerMenuItems",
-    depth: 1,
-    limit: 1000,
-    sort: ["-parent", "order", "id"],
-  });
+  const [menuItems, classes, clubs, footerMenuItems] = await Promise.all([
+    payload.find({
+      collection: "menuItems",
+      depth: 1,
+      limit: 1000,
+      sort: ["-parent", "order", "id"],
+    }),
+    payload.find({
+      collection: "classes",
+      depth: 1,
+      limit: 1000,
+      sort: "order",
+    }),
+    payload.find({
+      collection: "clubs",
+      depth: 0,
+      pagination: false,
+      sort: ["order", "name"],
+    }),
+    payload.find({
+      collection: "footerMenuItems",
+      depth: 1,
+      limit: 1000,
+      sort: ["-parent", "order", "id"],
+    }),
+  ]);
 
   const menuItemsGrouped: GroupedMenuItem[] = menuItems.docs.reduce(
     (acc, item) => {
@@ -149,7 +154,7 @@ export default async function RootLayout({
       }
       return acc;
     },
-    [] as GroupedMenuItem[]
+    [] as GroupedMenuItem[],
   );
 
   const footerMenuItemsGrouped: GroupedMenuItem[] = footerMenuItems.docs.reduce(
@@ -166,7 +171,7 @@ export default async function RootLayout({
         });
       } else {
         const parent = acc.find(
-          (i) => i.id === (item.parent as FooterMenuItem)?.id
+          (i) => i.id === (item.parent as FooterMenuItem)?.id,
         );
         if (parent) {
           parent.children.push({
@@ -182,7 +187,7 @@ export default async function RootLayout({
       }
       return acc;
     },
-    [] as GroupedMenuItem[]
+    [] as GroupedMenuItem[],
   );
 
   return (
@@ -194,6 +199,7 @@ export default async function RootLayout({
           menuItems={menuItemsGrouped}
           footerMenuItems={footerMenuItemsGrouped}
           classes={classes.docs || []}
+          clubs={clubs.docs.map(({ id, name, slug }) => ({ id, name, slug }))}
         />
         {children}
         <SchoolAssistant />

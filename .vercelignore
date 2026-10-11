@@ -1,0 +1,9 @@
+# Keep database backups, local credentials and test fixtures out of deployments.
+.env*
+*.dump
+*.sql
+scripts/verify-clubs.ts
+utils/*.test.ts
+.next
+node_modules
+.git

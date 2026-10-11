@@ -12,18 +12,55 @@ import Link from "next/link";
 import { cn } from "@/utils/cn";
 import { HoverScale } from "@/utils/hoverScale";
 import { GroupedMenuItem } from "@/types";
-import { Class } from "@/payload-types";
+import { Class, Club } from "@/payload-types";
 import { bodoniModa } from "@/fonts";
 
 export default function Header({
   menuItems,
   footerMenuItems,
   classes,
+  clubs,
 }: {
   menuItems: GroupedMenuItem[];
   footerMenuItems: GroupedMenuItem[];
   classes: Class[];
+  clubs: Pick<Club, "id" | "name" | "slug">[];
 }) {
+  const clubMenu = {
+    id: -1,
+    title: "Our Clubs",
+    href: "/clubs",
+    children: clubs.map((club) => ({
+      id: club.id,
+      title: club.name,
+      href: `/clubs/${club.slug}`,
+      children: [],
+    })),
+  };
+  const navigationItems = menuItems.some(
+    (item) => item.href === "/clubs" || item.title === "Our Clubs",
+  )
+    ? menuItems.map((item) =>
+        item.href === "/clubs" || item.title === "Our Clubs"
+          ? {
+              ...item,
+              children: [
+                { id: -1, title: "All Clubs", href: "/clubs", children: [] },
+                ...clubMenu.children,
+              ],
+            }
+          : item,
+      )
+    : [
+        ...menuItems,
+        {
+          ...clubMenu,
+          children: [
+            { id: -1, title: "All Clubs", href: "/clubs", children: [] },
+            ...clubMenu.children,
+          ],
+        },
+      ];
   const [open, setOpen] = useState(false);
   const [openSection, setOpenSection] = useState<number | null>(null);
   const [logoOpacity, setLogoOpacity] = useState(1);
@@ -62,6 +99,7 @@ export default function Header({
       <AnimatePresence mode="wait" initial={false}>
         {open && (
           <motion.nav
+            aria-label="Main navigation"
             initial={{ x: "200%" }}
             animate={{ x: "0%" }}
             exit={{ x: "200%" }}
@@ -75,11 +113,13 @@ export default function Header({
                 <div className="flex flex-col space-y-8 w-full min-h-full">
                   <div className="flex-1 flex items-center">
                     <div className="w-full md:max-w-md">
-                      {menuItems.map((item, i) => (
+                      {navigationItems.map((item, i) => (
                         <div key={i}>
-                          <div
+                          <button
+                            type="button"
+                            aria-expanded={openSection === i}
                             className={cn(
-                              "flex items-center justify-between text-2xl border-white p-2 group duration-300",
+                              "flex items-center justify-between text-2xl border-white p-2 group duration-300 w-full text-left",
                               i == 0 ? "border-t-0" : "border-t-2",
                               openSection === i ? "" : "hover:pl-4",
                               bodoniModa.className,
@@ -98,12 +138,14 @@ export default function Header({
                                 openSection === i ? "rotate-90" : "",
                               )}
                             />
-                          </div>
+                          </button>
 
                           {/*CLASSES INJECTION */}
                           {item.title == "Our Classes" && (
                             <motion.div
                               className={"text-lg overflow-hidden"}
+                              inert={openSection !== i}
+                              aria-hidden={openSection !== i}
                               initial={{ height: 0 }}
                               animate={{
                                 height: openSection === i ? "auto" : 0,
@@ -129,6 +171,8 @@ export default function Header({
                           {item.children && (
                             <motion.div
                               className={"text-lg overflow-hidden"}
+                              inert={openSection !== i}
+                              aria-hidden={openSection !== i}
                               initial={{ height: 0 }}
                               animate={{
                                 height: openSection === i ? "auto" : 0,
@@ -269,17 +313,21 @@ function LogoAndMenuButton({
         <div className="absolute right-0 top-0 bg-sapperton-green h-full p-1 flex flex-col justify-end rounded-b-md">
           <HoverScale>
             {!open ? (
-              <Menu
-                className="text-white"
-                size={48}
-                onClick={() => setOpen(!open)}
-              />
+              <button
+                type="button"
+                aria-label="Open menu"
+                onClick={() => setOpen(true)}
+              >
+                <Menu className="text-white" size={48} aria-hidden="true" />
+              </button>
             ) : (
-              <X
-                className="text-white"
-                size={48}
-                onClick={() => setOpen(!open)}
-              />
+              <button
+                type="button"
+                aria-label="Close menu"
+                onClick={() => setOpen(false)}
+              >
+                <X className="text-white" size={48} aria-hidden="true" />
+              </button>
             )}
           </HoverScale>
         </div>

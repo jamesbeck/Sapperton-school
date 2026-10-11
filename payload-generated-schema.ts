@@ -16,10 +16,10 @@ import {
   varchar,
   serial,
   type AnyPgColumn,
+  numeric,
   timestamp,
   jsonb,
   boolean,
-  numeric,
   pgEnum,
 } from "@payloadcms/db-postgres/drizzle/pg-core";
 import { sql, relations } from "@payloadcms/db-postgres/drizzle";
@@ -31,8 +31,20 @@ export const enum__pages_v_version_status = pgEnum(
   "enum__pages_v_version_status",
   ["draft", "published"],
 );
+export const enum_clubs_sessions_day = pgEnum("enum_clubs_sessions_day", [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+]);
 export const enum_events_type = pgEnum("enum_events_type", [
   "term-date",
+  "event",
+  "extracurricular",
+  "open-day",
   "other",
 ]);
 
@@ -73,9 +85,11 @@ export const menu_items = pgTable(
     page: integer("page_id").references(() => pages.id, {
       onDelete: "set null",
     }),
+    url: varchar("url"),
     parent: integer("parent_id").references((): AnyPgColumn => menu_items.id, {
       onDelete: "set null",
     }),
+    order: numeric("order"),
     updatedAt: timestamp("updated_at", {
       mode: "string",
       withTimezone: true,
@@ -101,6 +115,87 @@ export const menu_items = pgTable(
     menu_items_created_at_idx: index("menu_items_created_at_idx").on(
       columns.createdAt,
     ),
+  }),
+);
+
+export const footer_menu_items_breadcrumbs = pgTable(
+  "footer_menu_items_breadcrumbs",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: integer("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    doc: integer("doc_id").references(() => footer_menu_items.id, {
+      onDelete: "set null",
+    }),
+    url: varchar("url"),
+    label: varchar("label"),
+  },
+  (columns) => ({
+    _orderIdx: index("footer_menu_items_breadcrumbs_order_idx").on(
+      columns._order,
+    ),
+    _parentIDIdx: index("footer_menu_items_breadcrumbs_parent_id_idx").on(
+      columns._parentID,
+    ),
+    footer_menu_items_breadcrumbs_doc_idx: index(
+      "footer_menu_items_breadcrumbs_doc_idx",
+    ).on(columns.doc),
+    _parentIDFk: foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [footer_menu_items.id],
+      name: "footer_menu_items_breadcrumbs_parent_id_fk",
+    }).onDelete("cascade"),
+  }),
+);
+
+export const footer_menu_items = pgTable(
+  "footer_menu_items",
+  {
+    id: serial("id").primaryKey(),
+    title: varchar("title").notNull(),
+    slug: varchar("slug"),
+    page: integer("page_id").references(() => pages.id, {
+      onDelete: "set null",
+    }),
+    url: varchar("url"),
+    parent: integer("parent_id").references(
+      (): AnyPgColumn => footer_menu_items.id,
+      {
+        onDelete: "set null",
+      },
+    ),
+    order: numeric("order"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+  },
+  (columns) => ({
+    footer_menu_items_slug_idx: index("footer_menu_items_slug_idx").on(
+      columns.slug,
+    ),
+    footer_menu_items_page_idx: index("footer_menu_items_page_idx").on(
+      columns.page,
+    ),
+    footer_menu_items_parent_idx: index("footer_menu_items_parent_idx").on(
+      columns.parent,
+    ),
+    footer_menu_items_updated_at_idx: index(
+      "footer_menu_items_updated_at_idx",
+    ).on(columns.updatedAt),
+    footer_menu_items_created_at_idx: index(
+      "footer_menu_items_created_at_idx",
+    ).on(columns.createdAt),
   }),
 );
 
@@ -134,6 +229,35 @@ export const pages = pgTable(
     pages_updated_at_idx: index("pages_updated_at_idx").on(columns.updatedAt),
     pages_created_at_idx: index("pages_created_at_idx").on(columns.createdAt),
     pages__status_idx: index("pages__status_idx").on(columns._status),
+  }),
+);
+
+export const pages_rels = pgTable(
+  "pages_rels",
+  {
+    id: serial("id").primaryKey(),
+    order: integer("order"),
+    parent: integer("parent_id").notNull(),
+    path: varchar("path").notNull(),
+    mediaID: integer("media_id"),
+  },
+  (columns) => ({
+    order: index("pages_rels_order_idx").on(columns.order),
+    parentIdx: index("pages_rels_parent_idx").on(columns.parent),
+    pathIdx: index("pages_rels_path_idx").on(columns.path),
+    pages_rels_media_id_idx: index("pages_rels_media_id_idx").on(
+      columns.mediaID,
+    ),
+    parentFk: foreignKey({
+      columns: [columns["parent"]],
+      foreignColumns: [pages.id],
+      name: "pages_rels_parent_fk",
+    }).onDelete("cascade"),
+    mediaIdFk: foreignKey({
+      columns: [columns["mediaID"]],
+      foreignColumns: [media.id],
+      name: "pages_rels_media_fk",
+    }).onDelete("cascade"),
   }),
 );
 
@@ -201,11 +325,41 @@ export const _pages_v = pgTable(
   }),
 );
 
+export const _pages_v_rels = pgTable(
+  "_pages_v_rels",
+  {
+    id: serial("id").primaryKey(),
+    order: integer("order"),
+    parent: integer("parent_id").notNull(),
+    path: varchar("path").notNull(),
+    mediaID: integer("media_id"),
+  },
+  (columns) => ({
+    order: index("_pages_v_rels_order_idx").on(columns.order),
+    parentIdx: index("_pages_v_rels_parent_idx").on(columns.parent),
+    pathIdx: index("_pages_v_rels_path_idx").on(columns.path),
+    _pages_v_rels_media_id_idx: index("_pages_v_rels_media_id_idx").on(
+      columns.mediaID,
+    ),
+    parentFk: foreignKey({
+      columns: [columns["parent"]],
+      foreignColumns: [_pages_v.id],
+      name: "_pages_v_rels_parent_fk",
+    }).onDelete("cascade"),
+    mediaIdFk: foreignKey({
+      columns: [columns["mediaID"]],
+      foreignColumns: [media.id],
+      name: "_pages_v_rels_media_fk",
+    }).onDelete("cascade"),
+  }),
+);
+
 export const staff = pgTable(
   "staff",
   {
     id: serial("id").primaryKey(),
     name: varchar("name").notNull(),
+    slug: varchar("slug"),
     position: varchar("position").notNull(),
     biography: jsonb("biography").notNull(),
     image: integer("image_id").references(() => media.id, {
@@ -227,9 +381,70 @@ export const staff = pgTable(
       .notNull(),
   },
   (columns) => ({
+    staff_slug_idx: index("staff_slug_idx").on(columns.slug),
     staff_image_idx: index("staff_image_idx").on(columns.image),
     staff_updated_at_idx: index("staff_updated_at_idx").on(columns.updatedAt),
     staff_created_at_idx: index("staff_created_at_idx").on(columns.createdAt),
+  }),
+);
+
+export const staff_rels = pgTable(
+  "staff_rels",
+  {
+    id: serial("id").primaryKey(),
+    order: integer("order"),
+    parent: integer("parent_id").notNull(),
+    path: varchar("path").notNull(),
+    staffGroupsID: integer("staff_groups_id"),
+  },
+  (columns) => ({
+    order: index("staff_rels_order_idx").on(columns.order),
+    parentIdx: index("staff_rels_parent_idx").on(columns.parent),
+    pathIdx: index("staff_rels_path_idx").on(columns.path),
+    staff_rels_staff_groups_id_idx: index("staff_rels_staff_groups_id_idx").on(
+      columns.staffGroupsID,
+    ),
+    parentFk: foreignKey({
+      columns: [columns["parent"]],
+      foreignColumns: [staff.id],
+      name: "staff_rels_parent_fk",
+    }).onDelete("cascade"),
+    staffGroupsIdFk: foreignKey({
+      columns: [columns["staffGroupsID"]],
+      foreignColumns: [staff_groups.id],
+      name: "staff_rels_staff_groups_fk",
+    }).onDelete("cascade"),
+  }),
+);
+
+export const staff_groups = pgTable(
+  "staff_groups",
+  {
+    id: serial("id").primaryKey(),
+    name: varchar("name").notNull(),
+    order: numeric("order").notNull(),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+  },
+  (columns) => ({
+    staff_groups_updated_at_idx: index("staff_groups_updated_at_idx").on(
+      columns.updatedAt,
+    ),
+    staff_groups_created_at_idx: index("staff_groups_created_at_idx").on(
+      columns.createdAt,
+    ),
   }),
 );
 
@@ -237,10 +452,15 @@ export const classes = pgTable(
   "classes",
   {
     id: serial("id").primaryKey(),
+    order: numeric("order").default("0"),
     name: varchar("name").notNull(),
+    slug: varchar("slug"),
     years: varchar("years").notNull(),
     description: jsonb("description").notNull(),
     banner: integer("banner_id").references(() => media.id, {
+      onDelete: "set null",
+    }),
+    image: integer("image_id").references(() => media.id, {
       onDelete: "set null",
     }),
     updatedAt: timestamp("updated_at", {
@@ -259,7 +479,9 @@ export const classes = pgTable(
       .notNull(),
   },
   (columns) => ({
+    classes_slug_idx: index("classes_slug_idx").on(columns.slug),
     classes_banner_idx: index("classes_banner_idx").on(columns.banner),
+    classes_image_idx: index("classes_image_idx").on(columns.image),
     classes_updated_at_idx: index("classes_updated_at_idx").on(
       columns.updatedAt,
     ),
@@ -277,6 +499,7 @@ export const classes_rels = pgTable(
     parent: integer("parent_id").notNull(),
     path: varchar("path").notNull(),
     staffID: integer("staff_id"),
+    mediaID: integer("media_id"),
   },
   (columns) => ({
     order: index("classes_rels_order_idx").on(columns.order),
@@ -284,6 +507,9 @@ export const classes_rels = pgTable(
     pathIdx: index("classes_rels_path_idx").on(columns.path),
     classes_rels_staff_id_idx: index("classes_rels_staff_id_idx").on(
       columns.staffID,
+    ),
+    classes_rels_media_id_idx: index("classes_rels_media_id_idx").on(
+      columns.mediaID,
     ),
     parentFk: foreignKey({
       columns: [columns["parent"]],
@@ -295,6 +521,32 @@ export const classes_rels = pgTable(
       foreignColumns: [staff.id],
       name: "classes_rels_staff_fk",
     }).onDelete("cascade"),
+    mediaIdFk: foreignKey({
+      columns: [columns["mediaID"]],
+      foreignColumns: [media.id],
+      name: "classes_rels_media_fk",
+    }).onDelete("cascade"),
+  }),
+);
+
+export const clubs_sessions = pgTable(
+  "clubs_sessions",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: integer("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    day: enum_clubs_sessions_day("day").notNull(),
+    startTime: varchar("start_time").notNull(),
+    endTime: varchar("end_time").notNull(),
+  },
+  (columns) => ({
+    _orderIdx: index("clubs_sessions_order_idx").on(columns._order),
+    _parentIDIdx: index("clubs_sessions_parent_id_idx").on(columns._parentID),
+    _parentIDFk: foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [clubs.id],
+      name: "clubs_sessions_parent_id_fk",
+    }).onDelete("cascade"),
   }),
 );
 
@@ -302,10 +554,15 @@ export const clubs = pgTable(
   "clubs",
   {
     id: serial("id").primaryKey(),
+    order: numeric("order").default("0"),
     name: varchar("name").notNull(),
+    slug: varchar("slug").notNull(),
     years: varchar("years").notNull(),
     description: jsonb("description").notNull(),
     banner: integer("banner_id").references(() => media.id, {
+      onDelete: "set null",
+    }),
+    image: integer("image_id").references(() => media.id, {
       onDelete: "set null",
     }),
     updatedAt: timestamp("updated_at", {
@@ -324,7 +581,9 @@ export const clubs = pgTable(
       .notNull(),
   },
   (columns) => ({
+    clubs_slug_idx: uniqueIndex("clubs_slug_idx").on(columns.slug),
     clubs_banner_idx: index("clubs_banner_idx").on(columns.banner),
+    clubs_image_idx: index("clubs_image_idx").on(columns.image),
     clubs_updated_at_idx: index("clubs_updated_at_idx").on(columns.updatedAt),
     clubs_created_at_idx: index("clubs_created_at_idx").on(columns.createdAt),
   }),
@@ -337,12 +596,16 @@ export const clubs_rels = pgTable(
     order: integer("order"),
     parent: integer("parent_id").notNull(),
     path: varchar("path").notNull(),
+    mediaID: integer("media_id"),
     staffID: integer("staff_id"),
   },
   (columns) => ({
     order: index("clubs_rels_order_idx").on(columns.order),
     parentIdx: index("clubs_rels_parent_idx").on(columns.parent),
     pathIdx: index("clubs_rels_path_idx").on(columns.path),
+    clubs_rels_media_id_idx: index("clubs_rels_media_id_idx").on(
+      columns.mediaID,
+    ),
     clubs_rels_staff_id_idx: index("clubs_rels_staff_id_idx").on(
       columns.staffID,
     ),
@@ -350,6 +613,11 @@ export const clubs_rels = pgTable(
       columns: [columns["parent"]],
       foreignColumns: [clubs.id],
       name: "clubs_rels_parent_fk",
+    }).onDelete("cascade"),
+    mediaIdFk: foreignKey({
+      columns: [columns["mediaID"]],
+      foreignColumns: [media.id],
+      name: "clubs_rels_media_fk",
     }).onDelete("cascade"),
     staffIdFk: foreignKey({
       columns: [columns["staffID"]],
@@ -369,11 +637,13 @@ export const events = pgTable(
       withTimezone: true,
       precision: 3,
     }).notNull(),
+    startTime: varchar("start_time"),
     endDate: timestamp("end_date", {
       mode: "string",
       withTimezone: true,
       precision: 3,
     }),
+    endTime: varchar("end_time"),
     type: enum_events_type("type").notNull(),
     description: jsonb("description").notNull(),
     updatedAt: timestamp("updated_at", {
@@ -397,16 +667,49 @@ export const events = pgTable(
   }),
 );
 
+export const events_rels = pgTable(
+  "events_rels",
+  {
+    id: serial("id").primaryKey(),
+    order: integer("order"),
+    parent: integer("parent_id").notNull(),
+    path: varchar("path").notNull(),
+    classesID: integer("classes_id"),
+  },
+  (columns) => ({
+    order: index("events_rels_order_idx").on(columns.order),
+    parentIdx: index("events_rels_parent_idx").on(columns.parent),
+    pathIdx: index("events_rels_path_idx").on(columns.path),
+    events_rels_classes_id_idx: index("events_rels_classes_id_idx").on(
+      columns.classesID,
+    ),
+    parentFk: foreignKey({
+      columns: [columns["parent"]],
+      foreignColumns: [events.id],
+      name: "events_rels_parent_fk",
+    }).onDelete("cascade"),
+    classesIdFk: foreignKey({
+      columns: [columns["classesID"]],
+      foreignColumns: [classes.id],
+      name: "events_rels_classes_fk",
+    }).onDelete("cascade"),
+  }),
+);
+
 export const news_articles = pgTable(
   "news_articles",
   {
     id: serial("id").primaryKey(),
     headline: varchar("headline").notNull(),
+    slug: varchar("slug"),
     date: timestamp("date", {
       mode: "string",
       withTimezone: true,
       precision: 3,
     }).notNull(),
+    author: integer("author_id").references(() => staff.id, {
+      onDelete: "set null",
+    }),
     body: jsonb("body").notNull(),
     banner: integer("banner_id").references(() => media.id, {
       onDelete: "set null",
@@ -427,6 +730,10 @@ export const news_articles = pgTable(
       .notNull(),
   },
   (columns) => ({
+    news_articles_slug_idx: index("news_articles_slug_idx").on(columns.slug),
+    news_articles_author_idx: index("news_articles_author_idx").on(
+      columns.author,
+    ),
     news_articles_banner_idx: index("news_articles_banner_idx").on(
       columns.banner,
     ),
@@ -447,6 +754,7 @@ export const news_articles_rels = pgTable(
     parent: integer("parent_id").notNull(),
     path: varchar("path").notNull(),
     mediaID: integer("media_id"),
+    clubsID: integer("clubs_id"),
     classesID: integer("classes_id"),
   },
   (columns) => ({
@@ -456,6 +764,9 @@ export const news_articles_rels = pgTable(
     news_articles_rels_media_id_idx: index(
       "news_articles_rels_media_id_idx",
     ).on(columns.mediaID),
+    news_articles_rels_clubs_id_idx: index(
+      "news_articles_rels_clubs_id_idx",
+    ).on(columns.clubsID),
     news_articles_rels_classes_id_idx: index(
       "news_articles_rels_classes_id_idx",
     ).on(columns.classesID),
@@ -469,10 +780,85 @@ export const news_articles_rels = pgTable(
       foreignColumns: [media.id],
       name: "news_articles_rels_media_fk",
     }).onDelete("cascade"),
+    clubsIdFk: foreignKey({
+      columns: [columns["clubsID"]],
+      foreignColumns: [clubs.id],
+      name: "news_articles_rels_clubs_fk",
+    }).onDelete("cascade"),
     classesIdFk: foreignKey({
       columns: [columns["classesID"]],
       foreignColumns: [classes.id],
       name: "news_articles_rels_classes_fk",
+    }).onDelete("cascade"),
+  }),
+);
+
+export const letters = pgTable(
+  "letters",
+  {
+    id: serial("id").primaryKey(),
+    title: varchar("title").notNull(),
+    date: timestamp("date", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }).notNull(),
+    document: integer("document_id")
+      .notNull()
+      .references(() => media.id, {
+        onDelete: "set null",
+      }),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+  },
+  (columns) => ({
+    letters_document_idx: index("letters_document_idx").on(columns.document),
+    letters_updated_at_idx: index("letters_updated_at_idx").on(
+      columns.updatedAt,
+    ),
+    letters_created_at_idx: index("letters_created_at_idx").on(
+      columns.createdAt,
+    ),
+  }),
+);
+
+export const letters_rels = pgTable(
+  "letters_rels",
+  {
+    id: serial("id").primaryKey(),
+    order: integer("order"),
+    parent: integer("parent_id").notNull(),
+    path: varchar("path").notNull(),
+    classesID: integer("classes_id"),
+  },
+  (columns) => ({
+    order: index("letters_rels_order_idx").on(columns.order),
+    parentIdx: index("letters_rels_parent_idx").on(columns.parent),
+    pathIdx: index("letters_rels_path_idx").on(columns.path),
+    letters_rels_classes_id_idx: index("letters_rels_classes_id_idx").on(
+      columns.classesID,
+    ),
+    parentFk: foreignKey({
+      columns: [columns["parent"]],
+      foreignColumns: [letters.id],
+      name: "letters_rels_parent_fk",
+    }).onDelete("cascade"),
+    classesIdFk: foreignKey({
+      columns: [columns["classesID"]],
+      foreignColumns: [classes.id],
+      name: "letters_rels_classes_fk",
     }).onDelete("cascade"),
   }),
 );
@@ -508,30 +894,39 @@ export const media = pgTable(
     height: numeric("height"),
     focalX: numeric("focal_x"),
     focalY: numeric("focal_y"),
-    sizes_large_url: varchar("sizes_large_url"),
-    sizes_large_width: numeric("sizes_large_width"),
-    sizes_large_height: numeric("sizes_large_height"),
-    sizes_large_mimeType: varchar("sizes_large_mime_type"),
-    sizes_large_filesize: numeric("sizes_large_filesize"),
-    sizes_large_filename: varchar("sizes_large_filename"),
+    sizes_thumbnail_url: varchar("sizes_thumbnail_url"),
+    sizes_thumbnail_width: numeric("sizes_thumbnail_width"),
+    sizes_thumbnail_height: numeric("sizes_thumbnail_height"),
+    sizes_thumbnail_mimeType: varchar("sizes_thumbnail_mime_type"),
+    sizes_thumbnail_filesize: numeric("sizes_thumbnail_filesize"),
+    sizes_thumbnail_filename: varchar("sizes_thumbnail_filename"),
     sizes_small_url: varchar("sizes_small_url"),
     sizes_small_width: numeric("sizes_small_width"),
     sizes_small_height: numeric("sizes_small_height"),
     sizes_small_mimeType: varchar("sizes_small_mime_type"),
     sizes_small_filesize: numeric("sizes_small_filesize"),
     sizes_small_filename: varchar("sizes_small_filename"),
+    sizes_large_url: varchar("sizes_large_url"),
+    sizes_large_width: numeric("sizes_large_width"),
+    sizes_large_height: numeric("sizes_large_height"),
+    sizes_large_mimeType: varchar("sizes_large_mime_type"),
+    sizes_large_filesize: numeric("sizes_large_filesize"),
+    sizes_large_filename: varchar("sizes_large_filename"),
   },
   (columns) => ({
     media_folder_idx: index("media_folder_idx").on(columns.folder),
     media_updated_at_idx: index("media_updated_at_idx").on(columns.updatedAt),
     media_created_at_idx: index("media_created_at_idx").on(columns.createdAt),
     media_filename_idx: uniqueIndex("media_filename_idx").on(columns.filename),
-    media_sizes_large_sizes_large_filename_idx: index(
-      "media_sizes_large_sizes_large_filename_idx",
-    ).on(columns.sizes_large_filename),
+    media_sizes_thumbnail_sizes_thumbnail_filename_idx: index(
+      "media_sizes_thumbnail_sizes_thumbnail_filename_idx",
+    ).on(columns.sizes_thumbnail_filename),
     media_sizes_small_sizes_small_filename_idx: index(
       "media_sizes_small_sizes_small_filename_idx",
     ).on(columns.sizes_small_filename),
+    media_sizes_large_sizes_large_filename_idx: index(
+      "media_sizes_large_sizes_large_filename_idx",
+    ).on(columns.sizes_large_filename),
   }),
 );
 
@@ -659,12 +1054,15 @@ export const payload_locked_documents_rels = pgTable(
     parent: integer("parent_id").notNull(),
     path: varchar("path").notNull(),
     menuItemsID: integer("menu_items_id"),
+    footerMenuItemsID: integer("footer_menu_items_id"),
     pagesID: integer("pages_id"),
     staffID: integer("staff_id"),
+    staffGroupsID: integer("staff_groups_id"),
     classesID: integer("classes_id"),
     clubsID: integer("clubs_id"),
     eventsID: integer("events_id"),
     newsArticlesID: integer("news_articles_id"),
+    lettersID: integer("letters_id"),
     mediaID: integer("media_id"),
     usersID: integer("users_id"),
     "payload-foldersID": integer("payload_folders_id"),
@@ -678,12 +1076,18 @@ export const payload_locked_documents_rels = pgTable(
     payload_locked_documents_rels_menu_items_id_idx: index(
       "payload_locked_documents_rels_menu_items_id_idx",
     ).on(columns.menuItemsID),
+    payload_locked_documents_rels_footer_menu_items_id_idx: index(
+      "payload_locked_documents_rels_footer_menu_items_id_idx",
+    ).on(columns.footerMenuItemsID),
     payload_locked_documents_rels_pages_id_idx: index(
       "payload_locked_documents_rels_pages_id_idx",
     ).on(columns.pagesID),
     payload_locked_documents_rels_staff_id_idx: index(
       "payload_locked_documents_rels_staff_id_idx",
     ).on(columns.staffID),
+    payload_locked_documents_rels_staff_groups_id_idx: index(
+      "payload_locked_documents_rels_staff_groups_id_idx",
+    ).on(columns.staffGroupsID),
     payload_locked_documents_rels_classes_id_idx: index(
       "payload_locked_documents_rels_classes_id_idx",
     ).on(columns.classesID),
@@ -696,6 +1100,9 @@ export const payload_locked_documents_rels = pgTable(
     payload_locked_documents_rels_news_articles_id_idx: index(
       "payload_locked_documents_rels_news_articles_id_idx",
     ).on(columns.newsArticlesID),
+    payload_locked_documents_rels_letters_id_idx: index(
+      "payload_locked_documents_rels_letters_id_idx",
+    ).on(columns.lettersID),
     payload_locked_documents_rels_media_id_idx: index(
       "payload_locked_documents_rels_media_id_idx",
     ).on(columns.mediaID),
@@ -715,6 +1122,11 @@ export const payload_locked_documents_rels = pgTable(
       foreignColumns: [menu_items.id],
       name: "payload_locked_documents_rels_menu_items_fk",
     }).onDelete("cascade"),
+    footerMenuItemsIdFk: foreignKey({
+      columns: [columns["footerMenuItemsID"]],
+      foreignColumns: [footer_menu_items.id],
+      name: "payload_locked_documents_rels_footer_menu_items_fk",
+    }).onDelete("cascade"),
     pagesIdFk: foreignKey({
       columns: [columns["pagesID"]],
       foreignColumns: [pages.id],
@@ -724,6 +1136,11 @@ export const payload_locked_documents_rels = pgTable(
       columns: [columns["staffID"]],
       foreignColumns: [staff.id],
       name: "payload_locked_documents_rels_staff_fk",
+    }).onDelete("cascade"),
+    staffGroupsIdFk: foreignKey({
+      columns: [columns["staffGroupsID"]],
+      foreignColumns: [staff_groups.id],
+      name: "payload_locked_documents_rels_staff_groups_fk",
     }).onDelete("cascade"),
     classesIdFk: foreignKey({
       columns: [columns["classesID"]],
@@ -744,6 +1161,11 @@ export const payload_locked_documents_rels = pgTable(
       columns: [columns["newsArticlesID"]],
       foreignColumns: [news_articles.id],
       name: "payload_locked_documents_rels_news_articles_fk",
+    }).onDelete("cascade"),
+    lettersIdFk: foreignKey({
+      columns: [columns["lettersID"]],
+      foreignColumns: [letters.id],
+      name: "payload_locked_documents_rels_letters_fk",
     }).onDelete("cascade"),
     mediaIdFk: foreignKey({
       columns: [columns["mediaID"]],
@@ -857,6 +1279,68 @@ export const payload_migrations = pgTable(
   }),
 );
 
+export const hero_words_words = pgTable(
+  "hero_words_words",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: integer("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    word: varchar("word").notNull(),
+  },
+  (columns) => ({
+    _orderIdx: index("hero_words_words_order_idx").on(columns._order),
+    _parentIDIdx: index("hero_words_words_parent_id_idx").on(columns._parentID),
+    _parentIDFk: foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [hero_words.id],
+      name: "hero_words_words_parent_id_fk",
+    }).onDelete("cascade"),
+  }),
+);
+
+export const hero_words = pgTable("hero_words", {
+  id: serial("id").primaryKey(),
+  updatedAt: timestamp("updated_at", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3,
+  }),
+  createdAt: timestamp("created_at", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3,
+  }),
+});
+
+export const headteacher_welcome = pgTable(
+  "headteacher_welcome",
+  {
+    id: serial("id").primaryKey(),
+    name: varchar("name").notNull(),
+    jobTitle: varchar("job_title").notNull(),
+    body: varchar("body").notNull(),
+    quote: varchar("quote").notNull(),
+    image: integer("image_id").references(() => media.id, {
+      onDelete: "set null",
+    }),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+  },
+  (columns) => ({
+    headteacher_welcome_image_idx: index("headteacher_welcome_image_idx").on(
+      columns.image,
+    ),
+  }),
+);
+
 export const relations_menu_items_breadcrumbs = relations(
   menu_items_breadcrumbs,
   ({ one }) => ({
@@ -887,14 +1371,74 @@ export const relations_menu_items = relations(menu_items, ({ one, many }) => ({
     relationName: "breadcrumbs",
   }),
 }));
-export const relations_pages = relations(pages, ({ one }) => ({
+export const relations_footer_menu_items_breadcrumbs = relations(
+  footer_menu_items_breadcrumbs,
+  ({ one }) => ({
+    _parentID: one(footer_menu_items, {
+      fields: [footer_menu_items_breadcrumbs._parentID],
+      references: [footer_menu_items.id],
+      relationName: "breadcrumbs",
+    }),
+    doc: one(footer_menu_items, {
+      fields: [footer_menu_items_breadcrumbs.doc],
+      references: [footer_menu_items.id],
+      relationName: "doc",
+    }),
+  }),
+);
+export const relations_footer_menu_items = relations(
+  footer_menu_items,
+  ({ one, many }) => ({
+    page: one(pages, {
+      fields: [footer_menu_items.page],
+      references: [pages.id],
+      relationName: "page",
+    }),
+    parent: one(footer_menu_items, {
+      fields: [footer_menu_items.parent],
+      references: [footer_menu_items.id],
+      relationName: "parent",
+    }),
+    breadcrumbs: many(footer_menu_items_breadcrumbs, {
+      relationName: "breadcrumbs",
+    }),
+  }),
+);
+export const relations_pages_rels = relations(pages_rels, ({ one }) => ({
+  parent: one(pages, {
+    fields: [pages_rels.parent],
+    references: [pages.id],
+    relationName: "_rels",
+  }),
+  mediaID: one(media, {
+    fields: [pages_rels.mediaID],
+    references: [media.id],
+    relationName: "media",
+  }),
+}));
+export const relations_pages = relations(pages, ({ one, many }) => ({
   banner: one(media, {
     fields: [pages.banner],
     references: [media.id],
     relationName: "banner",
   }),
+  _rels: many(pages_rels, {
+    relationName: "_rels",
+  }),
 }));
-export const relations__pages_v = relations(_pages_v, ({ one }) => ({
+export const relations__pages_v_rels = relations(_pages_v_rels, ({ one }) => ({
+  parent: one(_pages_v, {
+    fields: [_pages_v_rels.parent],
+    references: [_pages_v.id],
+    relationName: "_rels",
+  }),
+  mediaID: one(media, {
+    fields: [_pages_v_rels.mediaID],
+    references: [media.id],
+    relationName: "media",
+  }),
+}));
+export const relations__pages_v = relations(_pages_v, ({ one, many }) => ({
   parent: one(pages, {
     fields: [_pages_v.parent],
     references: [pages.id],
@@ -905,14 +1449,33 @@ export const relations__pages_v = relations(_pages_v, ({ one }) => ({
     references: [media.id],
     relationName: "version_banner",
   }),
+  _rels: many(_pages_v_rels, {
+    relationName: "_rels",
+  }),
 }));
-export const relations_staff = relations(staff, ({ one }) => ({
+export const relations_staff_rels = relations(staff_rels, ({ one }) => ({
+  parent: one(staff, {
+    fields: [staff_rels.parent],
+    references: [staff.id],
+    relationName: "_rels",
+  }),
+  staffGroupsID: one(staff_groups, {
+    fields: [staff_rels.staffGroupsID],
+    references: [staff_groups.id],
+    relationName: "staffGroups",
+  }),
+}));
+export const relations_staff = relations(staff, ({ one, many }) => ({
   image: one(media, {
     fields: [staff.image],
     references: [media.id],
     relationName: "image",
   }),
+  _rels: many(staff_rels, {
+    relationName: "_rels",
+  }),
 }));
+export const relations_staff_groups = relations(staff_groups, () => ({}));
 export const relations_classes_rels = relations(classes_rels, ({ one }) => ({
   parent: one(classes, {
     fields: [classes_rels.parent],
@@ -924,6 +1487,11 @@ export const relations_classes_rels = relations(classes_rels, ({ one }) => ({
     references: [staff.id],
     relationName: "staff",
   }),
+  mediaID: one(media, {
+    fields: [classes_rels.mediaID],
+    references: [media.id],
+    relationName: "media",
+  }),
 }));
 export const relations_classes = relations(classes, ({ one, many }) => ({
   banner: one(media, {
@@ -931,15 +1499,35 @@ export const relations_classes = relations(classes, ({ one, many }) => ({
     references: [media.id],
     relationName: "banner",
   }),
+  image: one(media, {
+    fields: [classes.image],
+    references: [media.id],
+    relationName: "image",
+  }),
   _rels: many(classes_rels, {
     relationName: "_rels",
   }),
 }));
+export const relations_clubs_sessions = relations(
+  clubs_sessions,
+  ({ one }) => ({
+    _parentID: one(clubs, {
+      fields: [clubs_sessions._parentID],
+      references: [clubs.id],
+      relationName: "sessions",
+    }),
+  }),
+);
 export const relations_clubs_rels = relations(clubs_rels, ({ one }) => ({
   parent: one(clubs, {
     fields: [clubs_rels.parent],
     references: [clubs.id],
     relationName: "_rels",
+  }),
+  mediaID: one(media, {
+    fields: [clubs_rels.mediaID],
+    references: [media.id],
+    relationName: "media",
   }),
   staffID: one(staff, {
     fields: [clubs_rels.staffID],
@@ -948,16 +1536,40 @@ export const relations_clubs_rels = relations(clubs_rels, ({ one }) => ({
   }),
 }));
 export const relations_clubs = relations(clubs, ({ one, many }) => ({
+  sessions: many(clubs_sessions, {
+    relationName: "sessions",
+  }),
   banner: one(media, {
     fields: [clubs.banner],
     references: [media.id],
     relationName: "banner",
   }),
+  image: one(media, {
+    fields: [clubs.image],
+    references: [media.id],
+    relationName: "image",
+  }),
   _rels: many(clubs_rels, {
     relationName: "_rels",
   }),
 }));
-export const relations_events = relations(events, () => ({}));
+export const relations_events_rels = relations(events_rels, ({ one }) => ({
+  parent: one(events, {
+    fields: [events_rels.parent],
+    references: [events.id],
+    relationName: "_rels",
+  }),
+  classesID: one(classes, {
+    fields: [events_rels.classesID],
+    references: [classes.id],
+    relationName: "classes",
+  }),
+}));
+export const relations_events = relations(events, ({ many }) => ({
+  _rels: many(events_rels, {
+    relationName: "_rels",
+  }),
+}));
 export const relations_news_articles_rels = relations(
   news_articles_rels,
   ({ one }) => ({
@@ -971,6 +1583,11 @@ export const relations_news_articles_rels = relations(
       references: [media.id],
       relationName: "media",
     }),
+    clubsID: one(clubs, {
+      fields: [news_articles_rels.clubsID],
+      references: [clubs.id],
+      relationName: "clubs",
+    }),
     classesID: one(classes, {
       fields: [news_articles_rels.classesID],
       references: [classes.id],
@@ -981,6 +1598,11 @@ export const relations_news_articles_rels = relations(
 export const relations_news_articles = relations(
   news_articles,
   ({ one, many }) => ({
+    author: one(staff, {
+      fields: [news_articles.author],
+      references: [staff.id],
+      relationName: "author",
+    }),
     banner: one(media, {
       fields: [news_articles.banner],
       references: [media.id],
@@ -991,6 +1613,28 @@ export const relations_news_articles = relations(
     }),
   }),
 );
+export const relations_letters_rels = relations(letters_rels, ({ one }) => ({
+  parent: one(letters, {
+    fields: [letters_rels.parent],
+    references: [letters.id],
+    relationName: "_rels",
+  }),
+  classesID: one(classes, {
+    fields: [letters_rels.classesID],
+    references: [classes.id],
+    relationName: "classes",
+  }),
+}));
+export const relations_letters = relations(letters, ({ one, many }) => ({
+  document: one(media, {
+    fields: [letters.document],
+    references: [media.id],
+    relationName: "document",
+  }),
+  _rels: many(letters_rels, {
+    relationName: "_rels",
+  }),
+}));
 export const relations_media = relations(media, ({ one }) => ({
   folder: one(payload_folders, {
     fields: [media.folder],
@@ -1022,6 +1666,11 @@ export const relations_payload_locked_documents_rels = relations(
       references: [menu_items.id],
       relationName: "menuItems",
     }),
+    footerMenuItemsID: one(footer_menu_items, {
+      fields: [payload_locked_documents_rels.footerMenuItemsID],
+      references: [footer_menu_items.id],
+      relationName: "footerMenuItems",
+    }),
     pagesID: one(pages, {
       fields: [payload_locked_documents_rels.pagesID],
       references: [pages.id],
@@ -1031,6 +1680,11 @@ export const relations_payload_locked_documents_rels = relations(
       fields: [payload_locked_documents_rels.staffID],
       references: [staff.id],
       relationName: "staff",
+    }),
+    staffGroupsID: one(staff_groups, {
+      fields: [payload_locked_documents_rels.staffGroupsID],
+      references: [staff_groups.id],
+      relationName: "staffGroups",
     }),
     classesID: one(classes, {
       fields: [payload_locked_documents_rels.classesID],
@@ -1051,6 +1705,11 @@ export const relations_payload_locked_documents_rels = relations(
       fields: [payload_locked_documents_rels.newsArticlesID],
       references: [news_articles.id],
       relationName: "newsArticles",
+    }),
+    lettersID: one(letters, {
+      fields: [payload_locked_documents_rels.lettersID],
+      references: [letters.id],
+      relationName: "letters",
     }),
     mediaID: one(media, {
       fields: [payload_locked_documents_rels.mediaID],
@@ -1104,23 +1763,59 @@ export const relations_payload_migrations = relations(
   payload_migrations,
   () => ({}),
 );
+export const relations_hero_words_words = relations(
+  hero_words_words,
+  ({ one }) => ({
+    _parentID: one(hero_words, {
+      fields: [hero_words_words._parentID],
+      references: [hero_words.id],
+      relationName: "words",
+    }),
+  }),
+);
+export const relations_hero_words = relations(hero_words, ({ many }) => ({
+  words: many(hero_words_words, {
+    relationName: "words",
+  }),
+}));
+export const relations_headteacher_welcome = relations(
+  headteacher_welcome,
+  ({ one }) => ({
+    image: one(media, {
+      fields: [headteacher_welcome.image],
+      references: [media.id],
+      relationName: "image",
+    }),
+  }),
+);
 
 type DatabaseSchema = {
   enum_pages_status: typeof enum_pages_status;
   enum__pages_v_version_status: typeof enum__pages_v_version_status;
+  enum_clubs_sessions_day: typeof enum_clubs_sessions_day;
   enum_events_type: typeof enum_events_type;
   menu_items_breadcrumbs: typeof menu_items_breadcrumbs;
   menu_items: typeof menu_items;
+  footer_menu_items_breadcrumbs: typeof footer_menu_items_breadcrumbs;
+  footer_menu_items: typeof footer_menu_items;
   pages: typeof pages;
+  pages_rels: typeof pages_rels;
   _pages_v: typeof _pages_v;
+  _pages_v_rels: typeof _pages_v_rels;
   staff: typeof staff;
+  staff_rels: typeof staff_rels;
+  staff_groups: typeof staff_groups;
   classes: typeof classes;
   classes_rels: typeof classes_rels;
+  clubs_sessions: typeof clubs_sessions;
   clubs: typeof clubs;
   clubs_rels: typeof clubs_rels;
   events: typeof events;
+  events_rels: typeof events_rels;
   news_articles: typeof news_articles;
   news_articles_rels: typeof news_articles_rels;
+  letters: typeof letters;
+  letters_rels: typeof letters_rels;
   media: typeof media;
   users: typeof users;
   payload_folders: typeof payload_folders;
@@ -1129,18 +1824,31 @@ type DatabaseSchema = {
   payload_preferences: typeof payload_preferences;
   payload_preferences_rels: typeof payload_preferences_rels;
   payload_migrations: typeof payload_migrations;
+  hero_words_words: typeof hero_words_words;
+  hero_words: typeof hero_words;
+  headteacher_welcome: typeof headteacher_welcome;
   relations_menu_items_breadcrumbs: typeof relations_menu_items_breadcrumbs;
   relations_menu_items: typeof relations_menu_items;
+  relations_footer_menu_items_breadcrumbs: typeof relations_footer_menu_items_breadcrumbs;
+  relations_footer_menu_items: typeof relations_footer_menu_items;
+  relations_pages_rels: typeof relations_pages_rels;
   relations_pages: typeof relations_pages;
+  relations__pages_v_rels: typeof relations__pages_v_rels;
   relations__pages_v: typeof relations__pages_v;
+  relations_staff_rels: typeof relations_staff_rels;
   relations_staff: typeof relations_staff;
+  relations_staff_groups: typeof relations_staff_groups;
   relations_classes_rels: typeof relations_classes_rels;
   relations_classes: typeof relations_classes;
+  relations_clubs_sessions: typeof relations_clubs_sessions;
   relations_clubs_rels: typeof relations_clubs_rels;
   relations_clubs: typeof relations_clubs;
+  relations_events_rels: typeof relations_events_rels;
   relations_events: typeof relations_events;
   relations_news_articles_rels: typeof relations_news_articles_rels;
   relations_news_articles: typeof relations_news_articles;
+  relations_letters_rels: typeof relations_letters_rels;
+  relations_letters: typeof relations_letters;
   relations_media: typeof relations_media;
   relations_users: typeof relations_users;
   relations_payload_folders: typeof relations_payload_folders;
@@ -1149,6 +1857,9 @@ type DatabaseSchema = {
   relations_payload_preferences_rels: typeof relations_payload_preferences_rels;
   relations_payload_preferences: typeof relations_payload_preferences;
   relations_payload_migrations: typeof relations_payload_migrations;
+  relations_hero_words_words: typeof relations_hero_words_words;
+  relations_hero_words: typeof relations_hero_words;
+  relations_headteacher_welcome: typeof relations_headteacher_welcome;
 };
 
 declare module "@payloadcms/db-postgres" {

@@ -377,7 +377,15 @@ export interface Class {
  */
 export interface Club {
   id: number;
+  /**
+   * Lower numbers appear first in menus and lists.
+   */
+  order?: number | null;
   name: string;
+  /**
+   * Generated from the name when created; stays the same when renamed.
+   */
+  slug: string;
   years: string;
   description: {
     root: {
@@ -394,8 +402,22 @@ export interface Club {
     };
     [k: string]: unknown;
   };
+  /**
+   * Add one row per weekly session. Times are local school times; each session starts and ends on the selected day.
+   */
+  sessions?:
+    | {
+        day: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+        startTime: string;
+        endTime: string;
+        id?: string | null;
+      }[]
+    | null;
   banner?: (number | null) | Media;
+  image?: (number | null) | Media;
+  galleryImages?: (number | Media)[] | null;
   teachers?: (number | Staff)[] | null;
+  otherTeachers?: (number | Staff)[] | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -466,6 +488,7 @@ export interface NewsArticle {
   };
   banner?: (number | null) | Media;
   gallery?: (number | Media)[] | null;
+  clubs?: (number | Club)[] | null;
   classes?: (number | Class)[] | null;
   updatedAt: string;
   createdAt: string;
@@ -713,11 +736,24 @@ export interface ClassesSelect<T extends boolean = true> {
  * via the `definition` "clubs_select".
  */
 export interface ClubsSelect<T extends boolean = true> {
+  order?: T;
   name?: T;
+  slug?: T;
   years?: T;
   description?: T;
+  sessions?:
+    | T
+    | {
+        day?: T;
+        startTime?: T;
+        endTime?: T;
+        id?: T;
+      };
   banner?: T;
+  image?: T;
+  galleryImages?: T;
   teachers?: T;
+  otherTeachers?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -749,6 +785,7 @@ export interface NewsArticlesSelect<T extends boolean = true> {
   body?: T;
   banner?: T;
   gallery?: T;
+  clubs?: T;
   classes?: T;
   updatedAt?: T;
   createdAt?: T;

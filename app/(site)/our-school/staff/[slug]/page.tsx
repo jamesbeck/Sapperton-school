@@ -5,6 +5,8 @@ import { Media } from "@/payload-types";
 import Breadcrumbs from "@/components/breadcrumbs";
 import H2 from "@/components/ui/h2";
 import { RichText } from "@payloadcms/richtext-lexical/react";
+import { notFound } from "next/navigation";
+import ClubCard from "@/components/clubCard";
 import ClassCard from "@/components/classCard";
 import NewsCard from "@/components/newsCard";
 import H1 from "@/components/ui/h1";
@@ -31,6 +33,7 @@ export default async function StaffPage({
   });
 
   const staff = staffResults.docs[0];
+  if (!staff) notFound();
   const image = staff.image as Media;
 
   const classesTaught = await payload.find({
@@ -52,6 +55,19 @@ export default async function StaffPage({
       otherTeachers: {
         equals: staff.id,
       },
+    },
+  });
+
+  const clubs = await payload.find({
+    collection: "clubs",
+    depth: 1,
+    pagination: false,
+    sort: ["order", "name"],
+    where: {
+      or: [
+        { teachers: { equals: staff.id } },
+        { otherTeachers: { equals: staff.id } },
+      ],
     },
   });
 
@@ -122,6 +138,19 @@ export default async function StaffPage({
           </div>
         )}
       </Container>
+
+      {clubs.docs.length > 0 && (
+        <Container>
+          <div className="flex flex-col gap-8">
+            <H2>Clubs</H2>
+            <div className="flex flex-wrap gap-12 justify-center">
+              {clubs.docs.map((club) => (
+                <ClubCard club={club} key={club.id} />
+              ))}
+            </div>
+          </div>
+        </Container>
+      )}
 
       <Container>
         <div className="flex flex-col gap-8">
