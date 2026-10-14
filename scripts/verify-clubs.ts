@@ -89,6 +89,15 @@ try {
     sql`INSERT INTO clubs_rels (parent_id, path, staff_id) VALUES (1, 'teachers', 1)`,
   );
   await clubsMigration.up(args);
+  const blocksMigration = await import(
+    "../src/migrations/20261014_131520_add_club_term_blocks"
+  );
+  const retireMigration = await import(
+    "../src/migrations/20261014_131521_retire_club_weekly_sessions"
+  );
+  await blocksMigration.up(args);
+  await blocksMigration.down(args);
+  await blocksMigration.up(args);
   let existing = await payload.find({
     collection: "clubs",
     sort: "id",
@@ -112,16 +121,32 @@ try {
     "Rollback preserved the original clubs.",
   );
 
+  await db.execute(
+    sql`INSERT INTO clubs_sessions (_order,_parent_id,id,day,start_time,end_time) VALUES (1,1,'legacy-session','thursday','15:15','16:15')`,
+  );
+  await assert.rejects(retireMigration.up(args), /Migrate every legacy/);
+  const block = {
+    label: "Autumn 2026",
+    startDate: "2026-09-01T00:00:00Z",
+    endDate: "2026-10-31T00:00:00Z",
+    bookingMethod: "parentpay" as const,
+  };
   const chess = await payload.update({
     collection: "clubs",
     id: existing.docs[0].id,
     data: {
       name: "Chess and Games Club",
       slug: "attempted-url-change",
-      sessions: [
-        { day: "thursday", startTime: "15:15", endTime: "16:15" },
-        { day: "monday", startTime: "12:00", endTime: "12:45" },
+      blocks: [
+        {
+          ...block,
+          sessions: [
+            { day: "thursday", startTime: "15:15", endTime: "16:15" },
+            { day: "monday", startTime: "12:00", endTime: "12:45" },
+          ],
+        },
       ],
+      description: null,
     },
   });
   assert.equal(
@@ -148,10 +173,56 @@ try {
     ],
   ]) {
     await assert.rejects(
-      payload.update({ collection: "clubs", id: chess.id, data: { sessions } }),
+      payload.update({
+        collection: "clubs",
+        id: chess.id,
+        data: { blocks: [{ ...block, sessions }] },
+      }),
       /invalid|session|time/i,
     );
   }
+  await retireMigration.up(args);
+  await retireMigration.down(args);
+  assert.equal(
+    (await db.execute(sql`SELECT * FROM clubs_sessions`)).rows.length,
+    2,
+  );
+  await retireMigration.up(args);
+  const finalClub = await payload.findByID({
+    collection: "clubs",
+    id: chess.id,
+  });
+  assert.equal(finalClub.description, null);
+  assert.equal(finalClub.blocks?.[0].sessions.length, 2);
+  await assert.rejects(
+    payload.update({
+      collection: "clubs",
+      id: chess.id,
+      data: {
+        blocks: [
+          {
+            ...block,
+            sessions: [
+              { day: "thursday", startTime: "15:15", endTime: "16:15" },
+            ],
+            bookingMethod: "external",
+          },
+        ],
+      },
+    }),
+    /invalid|booking/i,
+  );
+  await payload.updateGlobal({
+    slug: "clubInformation",
+    data: {
+      bookingPolicy: "Bookings are for the full block.",
+      paymentPlanEmail: "test@example.test",
+    },
+  });
+  assert.equal(
+    (await payload.findGlobal({ slug: "clubInformation" })).bookingPolicy,
+    "Bookings are for the full block.",
+  );
   const schoolClass = await payload.create({
     collection: "classes",
     data: { name: "Test Class", years: "Years 3–6", description: richText },

@@ -31,15 +31,26 @@ export const enum__pages_v_version_status = pgEnum(
   "enum__pages_v_version_status",
   ["draft", "published"],
 );
-export const enum_clubs_sessions_day = pgEnum("enum_clubs_sessions_day", [
-  "monday",
-  "tuesday",
-  "wednesday",
-  "thursday",
-  "friday",
-  "saturday",
-  "sunday",
-]);
+export const enum_clubs_blocks_sessions_day = pgEnum(
+  "enum_clubs_blocks_sessions_day",
+  [
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+    "sunday",
+  ],
+);
+export const enum_clubs_blocks_booking_method = pgEnum(
+  "enum_clubs_blocks_booking_method",
+  ["parentpay", "external", "contact"],
+);
+export const enum_clubs_blocks_booking_status = pgEnum(
+  "enum_clubs_blocks_booking_status",
+  ["unspecified", "open", "full", "closed"],
+);
 export const enum_events_type = pgEnum("enum_events_type", [
   "term-date",
   "event",
@@ -529,23 +540,92 @@ export const classes_rels = pgTable(
   }),
 );
 
-export const clubs_sessions = pgTable(
-  "clubs_sessions",
+export const clubs_blocks_sessions = pgTable(
+  "clubs_blocks_sessions",
   {
     _order: integer("_order").notNull(),
-    _parentID: integer("_parent_id").notNull(),
+    _parentID: varchar("_parent_id").notNull(),
     id: varchar("id").primaryKey(),
-    day: enum_clubs_sessions_day("day").notNull(),
+    day: enum_clubs_blocks_sessions_day("day").notNull(),
     startTime: varchar("start_time").notNull(),
     endTime: varchar("end_time").notNull(),
   },
   (columns) => ({
-    _orderIdx: index("clubs_sessions_order_idx").on(columns._order),
-    _parentIDIdx: index("clubs_sessions_parent_id_idx").on(columns._parentID),
+    _orderIdx: index("clubs_blocks_sessions_order_idx").on(columns._order),
+    _parentIDIdx: index("clubs_blocks_sessions_parent_id_idx").on(
+      columns._parentID,
+    ),
+    _parentIDFk: foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [clubs_blocks.id],
+      name: "clubs_blocks_sessions_parent_id_fk",
+    }).onDelete("cascade"),
+  }),
+);
+
+export const clubs_blocks_excluded_dates = pgTable(
+  "clubs_blocks_excluded_dates",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: varchar("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    date: timestamp("date", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }).notNull(),
+    reason: varchar("reason"),
+  },
+  (columns) => ({
+    _orderIdx: index("clubs_blocks_excluded_dates_order_idx").on(
+      columns._order,
+    ),
+    _parentIDIdx: index("clubs_blocks_excluded_dates_parent_id_idx").on(
+      columns._parentID,
+    ),
+    _parentIDFk: foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [clubs_blocks.id],
+      name: "clubs_blocks_excluded_dates_parent_id_fk",
+    }).onDelete("cascade"),
+  }),
+);
+
+export const clubs_blocks = pgTable(
+  "clubs_blocks",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: integer("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    label: varchar("label").notNull(),
+    startDate: timestamp("start_date", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }).notNull(),
+    endDate: timestamp("end_date", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }).notNull(),
+    totalPrice: numeric("total_price"),
+    capacity: numeric("capacity"),
+    showSessionPrice: boolean("show_session_price"),
+    bookingMethod: enum_clubs_blocks_booking_method("booking_method").notNull(),
+    bookingURL: varchar("booking_u_r_l"),
+    bookingStatus:
+      enum_clubs_blocks_booking_status("booking_status").default("unspecified"),
+    externalLeader: varchar("external_leader"),
+    snackProvided: boolean("snack_provided"),
+    whatToBring: varchar("what_to_bring"),
+  },
+  (columns) => ({
+    _orderIdx: index("clubs_blocks_order_idx").on(columns._order),
+    _parentIDIdx: index("clubs_blocks_parent_id_idx").on(columns._parentID),
     _parentIDFk: foreignKey({
       columns: [columns["_parentID"]],
       foreignColumns: [clubs.id],
-      name: "clubs_sessions_parent_id_fk",
+      name: "clubs_blocks_parent_id_fk",
     }).onDelete("cascade"),
   }),
 );
@@ -558,7 +638,7 @@ export const clubs = pgTable(
     name: varchar("name").notNull(),
     slug: varchar("slug").notNull(),
     years: varchar("years").notNull(),
-    description: jsonb("description").notNull(),
+    description: jsonb("description"),
     banner: integer("banner_id").references(() => media.id, {
       onDelete: "set null",
     }),
@@ -1341,6 +1421,22 @@ export const headteacher_welcome = pgTable(
   }),
 );
 
+export const club_information = pgTable("club_information", {
+  id: serial("id").primaryKey(),
+  bookingPolicy: varchar("booking_policy"),
+  paymentPlanEmail: varchar("payment_plan_email"),
+  updatedAt: timestamp("updated_at", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3,
+  }),
+  createdAt: timestamp("created_at", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3,
+  }),
+});
+
 export const relations_menu_items_breadcrumbs = relations(
   menu_items_breadcrumbs,
   ({ one }) => ({
@@ -1508,13 +1604,39 @@ export const relations_classes = relations(classes, ({ one, many }) => ({
     relationName: "_rels",
   }),
 }));
-export const relations_clubs_sessions = relations(
-  clubs_sessions,
+export const relations_clubs_blocks_sessions = relations(
+  clubs_blocks_sessions,
   ({ one }) => ({
-    _parentID: one(clubs, {
-      fields: [clubs_sessions._parentID],
-      references: [clubs.id],
+    _parentID: one(clubs_blocks, {
+      fields: [clubs_blocks_sessions._parentID],
+      references: [clubs_blocks.id],
       relationName: "sessions",
+    }),
+  }),
+);
+export const relations_clubs_blocks_excluded_dates = relations(
+  clubs_blocks_excluded_dates,
+  ({ one }) => ({
+    _parentID: one(clubs_blocks, {
+      fields: [clubs_blocks_excluded_dates._parentID],
+      references: [clubs_blocks.id],
+      relationName: "excludedDates",
+    }),
+  }),
+);
+export const relations_clubs_blocks = relations(
+  clubs_blocks,
+  ({ one, many }) => ({
+    _parentID: one(clubs, {
+      fields: [clubs_blocks._parentID],
+      references: [clubs.id],
+      relationName: "blocks",
+    }),
+    sessions: many(clubs_blocks_sessions, {
+      relationName: "sessions",
+    }),
+    excludedDates: many(clubs_blocks_excluded_dates, {
+      relationName: "excludedDates",
     }),
   }),
 );
@@ -1536,8 +1658,8 @@ export const relations_clubs_rels = relations(clubs_rels, ({ one }) => ({
   }),
 }));
 export const relations_clubs = relations(clubs, ({ one, many }) => ({
-  sessions: many(clubs_sessions, {
-    relationName: "sessions",
+  blocks: many(clubs_blocks, {
+    relationName: "blocks",
   }),
   banner: one(media, {
     fields: [clubs.banner],
@@ -1788,11 +1910,17 @@ export const relations_headteacher_welcome = relations(
     }),
   }),
 );
+export const relations_club_information = relations(
+  club_information,
+  () => ({}),
+);
 
 type DatabaseSchema = {
   enum_pages_status: typeof enum_pages_status;
   enum__pages_v_version_status: typeof enum__pages_v_version_status;
-  enum_clubs_sessions_day: typeof enum_clubs_sessions_day;
+  enum_clubs_blocks_sessions_day: typeof enum_clubs_blocks_sessions_day;
+  enum_clubs_blocks_booking_method: typeof enum_clubs_blocks_booking_method;
+  enum_clubs_blocks_booking_status: typeof enum_clubs_blocks_booking_status;
   enum_events_type: typeof enum_events_type;
   menu_items_breadcrumbs: typeof menu_items_breadcrumbs;
   menu_items: typeof menu_items;
@@ -1807,7 +1935,9 @@ type DatabaseSchema = {
   staff_groups: typeof staff_groups;
   classes: typeof classes;
   classes_rels: typeof classes_rels;
-  clubs_sessions: typeof clubs_sessions;
+  clubs_blocks_sessions: typeof clubs_blocks_sessions;
+  clubs_blocks_excluded_dates: typeof clubs_blocks_excluded_dates;
+  clubs_blocks: typeof clubs_blocks;
   clubs: typeof clubs;
   clubs_rels: typeof clubs_rels;
   events: typeof events;
@@ -1827,6 +1957,7 @@ type DatabaseSchema = {
   hero_words_words: typeof hero_words_words;
   hero_words: typeof hero_words;
   headteacher_welcome: typeof headteacher_welcome;
+  club_information: typeof club_information;
   relations_menu_items_breadcrumbs: typeof relations_menu_items_breadcrumbs;
   relations_menu_items: typeof relations_menu_items;
   relations_footer_menu_items_breadcrumbs: typeof relations_footer_menu_items_breadcrumbs;
@@ -1840,7 +1971,9 @@ type DatabaseSchema = {
   relations_staff_groups: typeof relations_staff_groups;
   relations_classes_rels: typeof relations_classes_rels;
   relations_classes: typeof relations_classes;
-  relations_clubs_sessions: typeof relations_clubs_sessions;
+  relations_clubs_blocks_sessions: typeof relations_clubs_blocks_sessions;
+  relations_clubs_blocks_excluded_dates: typeof relations_clubs_blocks_excluded_dates;
+  relations_clubs_blocks: typeof relations_clubs_blocks;
   relations_clubs_rels: typeof relations_clubs_rels;
   relations_clubs: typeof relations_clubs;
   relations_events_rels: typeof relations_events_rels;
@@ -1860,6 +1993,7 @@ type DatabaseSchema = {
   relations_hero_words_words: typeof relations_hero_words_words;
   relations_hero_words: typeof relations_hero_words;
   relations_headteacher_welcome: typeof relations_headteacher_welcome;
+  relations_club_information: typeof relations_club_information;
 };
 
 declare module "@payloadcms/db-postgres" {

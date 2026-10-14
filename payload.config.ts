@@ -24,6 +24,7 @@ import { Letters } from "./collections/Letters";
 import slugify from "slugify";
 import { HeroWords } from "./globals/heroWords";
 import { HeadteacherWelcome } from "./globals/headteacherWelcome";
+import { ClubInformation } from "./globals/clubInformation";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -64,7 +65,7 @@ export default buildConfig({
     Media,
     Users,
   ],
-  globals: [HeroWords, HeadteacherWelcome],
+  globals: [HeroWords, HeadteacherWelcome, ClubInformation],
   editor: lexicalEditor({
     features: ({ defaultFeatures }) =>
       defaultFeatures

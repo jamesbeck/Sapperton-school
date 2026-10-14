@@ -37,24 +37,32 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## Clubs
 
-Manage clubs under **Clubs** in Payload. Each club has a description, year groups,
-club leaders/supporting staff, banner, card photo and gallery. Add a row under
-**Weekly sessions** for each session: weekday, start time and end time in 24-hour
-`HH:mm` format. Each session starts and ends on the same day, in local school time.
-These are weekly timetable entries, not automatically generated calendar events.
+Manage clubs under **Clubs** in Payload. Each club has year groups, optional
+activity description, staff, photos and gallery. Keep administrative details out
+of the description. Add **Term blocks** for each term: label, inclusive dates,
+weekly sessions (local `HH:mm` times), excluded dates and reasons, full block
+price, capacity, booking method/link/status, external leader, snack and equipment.
+Session counts and optional per-session prices are calculated from the timetable
+and exclusions. Capacity means maximum places, not remaining availability.
 
-Choose relevant clubs on news articles to show those articles on club pages and
-link back from news. The website lists clubs at `/clubs`, adds them to navigation,
-and links them from participating staff profiles. Clubs sort by order, then name.
-URLs are generated on creation and stay unchanged when a club is renamed.
+Manage shared policy and the payment-plan contact under **Club booking
+information**. The overview shows compact cards for the current block, next
+upcoming block, or latest previous block. Previous blocks stay accessible on club
+pages; finished/full/closed blocks do not show a booking action. Without a supplied
+ParentPay link, the page states the booking method rather than inventing a URL.
 
-Before deploying this feature, back up the database and run `npm run migrate`
-against the intended database using the normal environment configuration. The
-club migration preserves existing clubs/staff and backfills unique slugs before
-applying the required and unique constraints. It must run before the updated
-site starts querying the new fields. Its rollback removes the added club fields,
-sessions, gallery references and news associations; it retains original clubs,
-descriptions, banners and club-leader assignments.
+News and staff continue to link to permanent club pages. Clubs sort by order,
+then name, and URLs stay unchanged when names change.
+
+The term-block release uses two migrations. Run
+`20261014_131520_add_club_term_blocks` first to prepare the new tables while the old
+site still works. Populate term blocks with confirmed dates and transfer each old
+timetable. Promote the new website before clearing duplicated description content
+and running `20261014_131521_retire_club_weekly_sessions`. The retirement migration
+refuses to delete any timetable not copied into a block. Do not run both pending
+migrations against the old live application. Keep a content backup for rollback;
+retirement rollback restores the latest block's timetable, while reverting the
+first migration removes term-block and shared-policy data.
 
 For the migration/CMS integration check, use an **empty disposable local database**
 named `sapperton_clubs_test`:

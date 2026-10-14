@@ -12,7 +12,8 @@ import H2 from "@/components/ui/h2";
 import StaffCard from "@/components/staffCard";
 import NewsCard from "@/components/newsCard";
 import ImageGallery from "@/components/imageGallery";
-import ClubSessions from "@/components/clubSessions";
+import ClubBlockDetails from "@/components/clubBlockDetails";
+import { getBlockState } from "@/utils/clubBlocks";
 
 export const revalidate = 30;
 type Props = { params: Promise<{ slug: string }> };
@@ -41,6 +42,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ClubPage({ params }: Props) {
   const club = await getClub((await params).slug);
   const banner = typeof club.banner === "object" ? club.banner : null;
+  const blocks = [...(club.blocks || [])].sort((a, b) =>
+    a.startDate.localeCompare(b.startDate),
+  );
+  const activeBlocks = blocks.filter(
+    (block) => getBlockState(block) !== "past",
+  );
+  const pastBlocks = blocks
+    .filter((block) => getBlockState(block) === "past")
+    .reverse();
   const staff = [...(club.teachers || []), ...(club.otherTeachers || [])]
     .filter(
       (person): person is Staff =>
@@ -86,14 +96,30 @@ export default async function ClubPage({ params }: Props) {
         <div className="flex flex-col gap-8">
           <H1>{club.name}</H1>
           <p className="text-center">{club.years}</p>
-          <RichText
-            data={club.description}
-            className="page-content text-center"
-          />
-          <div className="flex flex-col gap-4">
-            <H2>Weekly Sessions</H2>
-            <ClubSessions sessions={club.sessions} />
-          </div>
+          {club.description && (
+            <RichText
+              data={club.description}
+              className="page-content text-center"
+            />
+          )}
+          {activeBlocks.map((block) => (
+            <ClubBlockDetails key={block.id} block={block} />
+          ))}
+          {!blocks.length && (
+            <p className="text-center">Term details will be confirmed soon.</p>
+          )}
+          {pastBlocks.length > 0 && (
+            <details className="rounded-xl border border-sapperton-green/20 p-6">
+              <summary className="cursor-pointer font-semibold">
+                Previous term blocks ({pastBlocks.length})
+              </summary>
+              <div className="mt-6 flex flex-col gap-6">
+                {pastBlocks.map((block) => (
+                  <ClubBlockDetails key={block.id} block={block} />
+                ))}
+              </div>
+            </details>
+          )}
         </div>
       </Container>
       {staff.length > 0 && (

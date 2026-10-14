@@ -1,41 +1,72 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Users } from "lucide-react";
 import type { Club } from "@/payload-types";
 import ClubSessions from "@/components/clubSessions";
+import {
+  countBlockSessions,
+  formatBlockDate,
+  formatClubPrice,
+  getBlockState,
+  getFeaturedBlock,
+} from "@/utils/clubBlocks";
 
 export default function ClubCard({ club }: { club: Club }) {
   const image = typeof club.image === "object" ? club.image : null;
+  const block = getFeaturedBlock(club.blocks);
   return (
     <Link
       href={`/clubs/${club.slug}`}
-      className="flex flex-col items-center gap-4 w-64 transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-4 rounded-lg"
+      className="flex h-full flex-col gap-4 rounded-xl border border-sapperton-green/25 bg-white p-6 transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-4"
     >
-      <div className="relative w-48 h-48 rounded-full overflow-hidden bg-gray-200">
-        {image?.url ? (
+      <div className="flex items-start gap-4">
+        {image?.url && (
           <Image
             src={image.url}
             alt={image.alt || club.name}
-            fill
-            sizes="192px"
+            width={64}
+            height={64}
+            sizes="64px"
+            className="h-16 w-16 shrink-0 rounded-lg object-cover"
             style={{
-              objectFit: "cover",
               objectPosition: `${image.focalX ?? 50}% ${image.focalY ?? 50}%`,
             }}
           />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-500">
-            <Users className="w-24 h-24" aria-hidden="true" />
-          </div>
         )}
-      </div>
-      <div className="flex flex-col items-center gap-1">
-        <h3 className="text-xl text-center">{club.name}</h3>
-        <p className="text-center text-sm">{club.years}</p>
-        <div className="text-sm mt-2">
-          <ClubSessions sessions={club.sessions} />
+        <div>
+          <h3 className="text-xl font-semibold">{club.name}</h3>
+          <p className="mt-1 text-sm">{club.years}</p>
         </div>
       </div>
+      {block ? (
+        <>
+          <div className="text-sm">
+            <ClubSessions sessions={block.sessions} />
+          </div>
+          <div className="text-sm">
+            <p className="font-semibold">{block.label}</p>
+            <p>
+              {formatBlockDate(block.startDate)} –{" "}
+              {formatBlockDate(block.endDate)}
+            </p>
+            <p>
+              {countBlockSessions(block)} sessions
+              {getBlockState(block) === "past" ? " · Previous block" : ""}
+            </p>
+          </div>
+          <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-sapperton-green/20 pt-4">
+            {block.totalPrice != null && (
+              <span className="font-semibold">
+                {formatClubPrice(block.totalPrice)} for the block
+              </span>
+            )}
+            <span className="text-sm underline underline-offset-4">
+              View details
+            </span>
+          </div>
+        </>
+      ) : (
+        <p className="text-sm">Term details will be confirmed soon.</p>
+      )}
     </Link>
   );
 }

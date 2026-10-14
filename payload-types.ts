@@ -113,10 +113,12 @@ export interface Config {
   globals: {
     'hero-words': HeroWord;
     'headteacher-welcome': HeadteacherWelcome;
+    clubInformation: ClubInformation;
   };
   globalsSelect: {
     'hero-words': HeroWordsSelect<false> | HeroWordsSelect<true>;
     'headteacher-welcome': HeadteacherWelcomeSelect<false> | HeadteacherWelcomeSelect<true>;
+    clubInformation: ClubInformationSelect<false> | ClubInformationSelect<true>;
   };
   locale: null;
   user: User & {
@@ -387,7 +389,10 @@ export interface Club {
    */
   slug: string;
   years: string;
-  description: {
+  /**
+   * Optional information about the activity. Keep dates, prices and booking details in term blocks.
+   */
+  description?: {
     root: {
       type: string;
       children: {
@@ -401,15 +406,46 @@ export interface Club {
       version: number;
     };
     [k: string]: unknown;
-  };
-  /**
-   * Add one row per weekly session. Times are local school times; each session starts and ends on the selected day.
-   */
-  sessions?:
+  } | null;
+  blocks?:
     | {
-        day: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
-        startTime: string;
-        endTime: string;
+        label: string;
+        startDate: string;
+        endDate: string;
+        /**
+         * Local school times. Each session starts and ends on the selected weekday.
+         */
+        sessions: {
+          day: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+          startTime: string;
+          endTime: string;
+          id?: string | null;
+        }[];
+        excludedDates?:
+          | {
+              date: string;
+              reason?: string | null;
+              id?: string | null;
+            }[]
+          | null;
+        totalPrice?: number | null;
+        /**
+         * Leave blank if unspecified. This is capacity, not remaining availability.
+         */
+        capacity?: number | null;
+        /**
+         * Calculated from the full price and scheduled session count.
+         */
+        showSessionPrice?: boolean | null;
+        bookingMethod: 'parentpay' | 'external' | 'contact';
+        bookingURL?: string | null;
+        bookingStatus?: ('unspecified' | 'open' | 'full' | 'closed') | null;
+        /**
+         * For leaders who do not have a school staff profile.
+         */
+        externalLeader?: string | null;
+        snackProvided?: boolean | null;
+        whatToBring?: string | null;
         id?: string | null;
       }[]
     | null;
@@ -741,12 +777,36 @@ export interface ClubsSelect<T extends boolean = true> {
   slug?: T;
   years?: T;
   description?: T;
-  sessions?:
+  blocks?:
     | T
     | {
-        day?: T;
-        startTime?: T;
-        endTime?: T;
+        label?: T;
+        startDate?: T;
+        endDate?: T;
+        sessions?:
+          | T
+          | {
+              day?: T;
+              startTime?: T;
+              endTime?: T;
+              id?: T;
+            };
+        excludedDates?:
+          | T
+          | {
+              date?: T;
+              reason?: T;
+              id?: T;
+            };
+        totalPrice?: T;
+        capacity?: T;
+        showSessionPrice?: T;
+        bookingMethod?: T;
+        bookingURL?: T;
+        bookingStatus?: T;
+        externalLeader?: T;
+        snackProvided?: T;
+        whatToBring?: T;
         id?: T;
       };
   banner?: T;
@@ -945,6 +1005,17 @@ export interface HeadteacherWelcome {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "clubInformation".
+ */
+export interface ClubInformation {
+  id: number;
+  bookingPolicy?: string | null;
+  paymentPlanEmail?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "hero-words_select".
  */
 export interface HeroWordsSelect<T extends boolean = true> {
@@ -968,6 +1039,17 @@ export interface HeadteacherWelcomeSelect<T extends boolean = true> {
   body?: T;
   quote?: T;
   image?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "clubInformation_select".
+ */
+export interface ClubInformationSelect<T extends boolean = true> {
+  bookingPolicy?: T;
+  paymentPlanEmail?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
