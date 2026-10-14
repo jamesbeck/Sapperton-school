@@ -37,7 +37,7 @@ export default function Header({
       children: [],
     })),
   };
-  const navigationItems = menuItems.some(
+  const baseNavigationItems = menuItems.some(
     (item) => item.href === "/clubs" || item.title === "Our Clubs",
   )
     ? menuItems.map((item) =>
@@ -61,6 +61,22 @@ export default function Header({
           ],
         },
       ];
+  const navigationItems = baseNavigationItems.filter(
+    (item) => item.href !== "/clubs" && item.title !== "Our Clubs",
+  );
+  const clubsItem = baseNavigationItems.find(
+    (item) => item.href === "/clubs" || item.title === "Our Clubs",
+  );
+  const classesIndex = navigationItems.findIndex(
+    (item) => item.href === "/classes" || item.title === "Our Classes",
+  );
+  if (clubsItem) {
+    navigationItems.splice(
+      classesIndex === -1 ? navigationItems.length : classesIndex + 1,
+      0,
+      clubsItem,
+    );
+  }
   const [open, setOpen] = useState(false);
   const [openSection, setOpenSection] = useState<number | null>(null);
   const [logoOpacity, setLogoOpacity] = useState(1);
