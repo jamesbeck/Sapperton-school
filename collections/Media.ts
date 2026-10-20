@@ -1,5 +1,6 @@
-import type { CollectionConfig, PayloadRequest } from "payload";
+import { APIError, type CollectionConfig, type PayloadRequest } from "payload";
 
+const minimumImageWidth = 1200;
 const schoolYearSuffixPattern = /(?:^|\s)(\d{4})-(\d{4})$/;
 
 function splitFilename(filename: string) {
@@ -35,7 +36,34 @@ async function mediaFilenameExists(req: PayloadRequest, filename: string) {
 export const Media: CollectionConfig = {
   slug: "media",
   folders: true,
+  admin: {
+    description: "Images must be at least 1,200 pixels wide. Any height is allowed.",
+  },
   hooks: {
+    beforeValidate: [
+      ({ data, req }) => {
+        // Payload has measured the uploaded file before this hook runs.
+        // Only validate new files, so existing media descriptions remain editable.
+        if (req.file && data?.mimeType?.startsWith("image/")) {
+          if (
+            typeof data.width !== "number" ||
+            !Number.isFinite(data.width) ||
+            data.width < minimumImageWidth
+          ) {
+            throw new APIError(
+              `Images must be at least 1,200 pixels wide. ${
+                typeof data.width === "number"
+                  ? `This image is ${data.width} pixels wide.`
+                  : "The width of this image could not be determined."
+              } Any height is allowed.`,
+              400,
+            );
+          }
+        }
+
+        return data;
+      },
+    ],
     beforeOperation: [
       async ({ operation, req }) => {
         if (operation !== "create" || !req.file?.name) {
