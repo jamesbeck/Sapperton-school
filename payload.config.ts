@@ -114,7 +114,7 @@ export default buildConfig({
     }),
 
     s3Storage({
-      clientUploads: false,
+      clientUploads: true,
       acl: "public-read",
       // signedDownloads: true,
       collections: {
