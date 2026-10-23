@@ -30,7 +30,9 @@ import {
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
+import { useAssistantPlacement } from "@/components/assistantPlacement";
 import {
   FormEvent,
   KeyboardEvent,
@@ -321,6 +323,10 @@ function ChatText({ text }: { text: string }) {
 
 export default function SchoolAssistant() {
   const router = useRouter();
+  const pathname = usePathname();
+  const { inlineTarget } = useAssistantPlacement();
+  const isInline = pathname === "/" || pathname === "/chatbot-test";
+
   const [isOpen, setIsOpen] = useState(false);
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -375,17 +381,21 @@ export default function SchoolAssistant() {
   );
 
   useEffect(() => {
-    if (isOpen) return;
+    setIsOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (isOpen || isInline) return;
 
     const interval = window.setInterval(() => {
       setSuggestionIndex((current) => (current + 1) % suggestions.length);
     }, 5000);
 
     return () => window.clearInterval(interval);
-  }, [isOpen]);
+  }, [isOpen, isInline]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || isInline) return;
 
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -399,7 +409,7 @@ export default function SchoolAssistant() {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", closeOnEscape);
     };
-  }, [isOpen]);
+  }, [isOpen, isInline]);
 
   const resetActivity = useCallback(() => {
     if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
@@ -475,7 +485,7 @@ export default function SchoolAssistant() {
     });
 
     return () => cancelAnimationFrame(animationFrame);
-  }, [messages, streamedText, visibleActivityLabel, status]);
+  }, [messages, streamedText, visibleActivityLabel, status, isOpen, inlineTarget]);
 
   const initialise = useCallback(async () => {
     chatRef.current?.stop();
@@ -794,28 +804,30 @@ export default function SchoolAssistant() {
   const canCompose = status === "ready" || status === "thinking";
   const currentSuggestion = suggestions[suggestionIndex];
 
-  return (
-    <>
-      <AnimatePresence>
-        {isOpen ? (
-          <div className="fixed inset-0 z-[110]">
-            <motion.button
-              type="button"
-              aria-label="Close school assistant"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={() => setIsOpen(false)}
-              className="absolute inset-0 hidden bg-[#102d25]/35 backdrop-blur-[2px] sm:block"
-            />
+  const openAssistant = () => {
+    if (isInline) {
+      inlineTarget?.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "instant"
+          : "smooth",
+        block: "center",
+      });
+      inlineTarget?.querySelector<HTMLTextAreaElement>("textarea")?.focus({
+        preventScroll: true,
+      });
+      return;
+    }
+    setIsOpen(true);
+  };
+
+  const panel = (
             <motion.aside
-              role="dialog"
-              aria-modal="true"
+              role={isInline ? "region" : "dialog"}
+              aria-modal={isInline ? undefined : true}
               aria-labelledby="school-assistant-title"
-              initial={{ x: "100%" }}
+              initial={isInline ? false : { x: "100%" }}
               animate={{ x: 0 }}
-              exit={{ x: "100%" }}
+              exit={isInline ? undefined : { x: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
               onDragEnter={(event) => {
                 if (!event.dataTransfer.types.includes("Files")) return;
@@ -840,7 +852,7 @@ export default function SchoolAssistant() {
                 setIsDraggingFiles(false);
                 if (canCompose) addFiles(Array.from(event.dataTransfer.files));
               }}
-              className="absolute inset-0 flex min-h-0 flex-col overflow-hidden bg-[#f7f8f5] shadow-[-24px_0_70px_rgba(10,35,28,0.22)] sm:inset-y-3 sm:left-auto sm:right-3 sm:w-[min(30rem,calc(100vw-1.5rem))] sm:rounded-[1.5rem] sm:ring-1 sm:ring-black/10"
+              className={isInline ? "relative flex h-[min(42rem,80svh)] min-h-[30rem] flex-col overflow-hidden rounded-3xl bg-[#f7f8f5] shadow-xl ring-1 ring-black/10" : "absolute inset-0 flex min-h-0 flex-col overflow-hidden bg-[#f7f8f5] shadow-[-24px_0_70px_rgba(10,35,28,0.22)] sm:inset-y-3 sm:left-auto sm:right-3 sm:w-[min(30rem,calc(100vw-1.5rem))] sm:rounded-[1.5rem] sm:ring-1 sm:ring-black/10"}
             >
               {isDraggingFiles ? (
                 <div className="pointer-events-none absolute inset-3 z-30 flex items-center justify-center rounded-[1.25rem] border-2 border-dashed border-sapperton-green bg-white/95 shadow-xl">
@@ -887,7 +899,7 @@ export default function SchoolAssistant() {
                   <RefreshCw aria-hidden="true" className="h-4 w-4" />
                 </button>
               ) : null}
-              <button
+              {!isInline && <button
                 type="button"
                 onClick={() => {
                   setIsOpen(false);
@@ -897,7 +909,7 @@ export default function SchoolAssistant() {
                 aria-label="Close school assistant"
               >
                 <X aria-hidden="true" className="h-5 w-5" />
-              </button>
+              </button>}
             </div>
           </div>
 
@@ -943,7 +955,7 @@ export default function SchoolAssistant() {
                   <p className="mb-3 mt-7 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
                     Popular questions
                   </p>
-                  <div className="grid gap-2 min-[420px]:grid-cols-2 sm:grid-cols-1">
+                  <div className={`grid gap-2 min-[420px]:grid-cols-2 ${isInline ? "" : "sm:grid-cols-1"}`}>
                     {suggestions.map((suggestion) => (
                       <button
                         key={suggestion}
@@ -1119,13 +1131,28 @@ export default function SchoolAssistant() {
             </div>
           </div>
             </motion.aside>
-          </div>
-        ) : null}
-      </AnimatePresence>
+  );
 
-      {!isOpen ? (
+  return (
+    <>
+      {isInline && inlineTarget ? createPortal(panel, inlineTarget) : null}
+      {!isInline && <AnimatePresence>
+        {isOpen ? (
+          <motion.div key="assistant-drawer" className="fixed inset-0 z-[110]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <button
+              type="button"
+              aria-label="Close school assistant"
+              onClick={() => setIsOpen(false)}
+              className="absolute inset-0 hidden bg-[#102d25]/35 backdrop-blur-[2px] sm:block"
+            />
+            {panel}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>}
+
+      {!isOpen || isInline ? (
         <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-[90] flex max-w-[calc(100vw-2rem)] flex-col items-end gap-2 sm:bottom-6 sm:right-6">
-          <AnimatePresence mode="wait" initial={false}>
+          {!isInline && <AnimatePresence mode="wait" initial={false}>
             <motion.button
               key={currentSuggestion}
               type="button"
@@ -1142,18 +1169,18 @@ export default function SchoolAssistant() {
             >
               {currentSuggestion}
             </motion.button>
-          </AnimatePresence>
+          </AnimatePresence>}
 
           <motion.button
             ref={launcherRef}
             type="button"
-            onClick={() => setIsOpen(true)}
+            onClick={openAssistant}
             initial={{ opacity: 0, y: 12, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             whileHover={{ y: -2 }}
             whileTap={{ scale: 0.97 }}
             className="flex items-center gap-3 rounded-full bg-sapperton-green py-3 pl-3 pr-5 text-sm font-semibold text-white shadow-[0_14px_40px_rgba(17,61,49,0.35)] ring-1 ring-white/20 transition-colors hover:bg-[#285d4c] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-sapperton-green"
-            aria-label="Open the Sapperton School assistant"
+            aria-label={isInline ? "Scroll to the Sapperton School assistant" : "Open the Sapperton School assistant"}
           >
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
               <MessageCircleQuestion aria-hidden="true" className="h-5 w-5" />

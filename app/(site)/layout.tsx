@@ -9,6 +9,7 @@ import { MenuItem, FooterMenuItem } from "@/payload-types";
 import Footer from "@/components/footer";
 import { Analytics } from "@vercel/analytics/react";
 import SchoolAssistant from "@/components/schoolAssistant";
+import { AssistantPlacementProvider } from "@/components/assistantPlacement";
 
 // Revalidate menu structure every 30 seconds
 export const revalidate = 30;
@@ -201,8 +202,10 @@ export default async function RootLayout({
           classes={classes.docs || []}
           clubs={clubs.docs.map(({ id, name, slug }) => ({ id, name, slug }))}
         />
-        {children}
-        <SchoolAssistant />
+        <AssistantPlacementProvider>
+          {children}
+          <SchoolAssistant />
+        </AssistantPlacementProvider>
         <Footer />
         <Analytics />
       </body>

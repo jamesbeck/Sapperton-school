@@ -1,4 +1,5 @@
 import Hero from "@/components/hero";
+import { InlineAssistant } from "@/components/assistantPlacement";
 import HeadMessage from "@/components/headMessage";
 import BookAVisit from "@/components/bookAVisit";
 import OpenDays from "@/components/openDays";
@@ -93,7 +94,8 @@ export default async function Home({}) {
   return (
     <div>
       {/* AdmissionsPopup is disabled; its component is retained for future announcements. */}
-      <Hero words={heroWords} openDays={openDaysResult.docs} />
+      <Hero words={heroWords} openDays={openDaysResult.docs} scrollTarget="ask-sapperton" />
+      <InlineAssistant />
       <HeadMessage
         headteacherWelcome={headteacherWelcome}
         helenCooper={helenCooperResult.docs[0] ?? null}
