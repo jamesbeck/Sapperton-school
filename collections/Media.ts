@@ -1,6 +1,6 @@
 import { APIError, type CollectionConfig, type PayloadRequest } from "payload";
 
-const minimumImageWidth = 1200;
+const minimumImageWidth = 800;
 const schoolYearSuffixPattern = /(?:^|\s)(\d{4})-(\d{4})$/;
 
 function splitFilename(filename: string) {
@@ -37,7 +37,7 @@ export const Media: CollectionConfig = {
   slug: "media",
   folders: true,
   admin: {
-    description: "Images must be at least 1,200 pixels wide. Any height is allowed.",
+    description: "Images must be at least 800 pixels wide. Any height is allowed.",
   },
   hooks: {
     beforeValidate: [
@@ -51,7 +51,7 @@ export const Media: CollectionConfig = {
             data.width < minimumImageWidth
           ) {
             throw new APIError(
-              `Images must be at least 1,200 pixels wide. ${
+              `Images must be at least 800 pixels wide. ${
                 typeof data.width === "number"
                   ? `This image is ${data.width} pixels wide.`
                   : "The width of this image could not be determined."

@@ -200,6 +200,8 @@ export interface Page {
   _status?: ('draft' | 'published') | null;
 }
 /**
+ * Images must be at least 800 pixels wide. Any height is allowed.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
