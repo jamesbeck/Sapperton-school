@@ -1,3 +1,4 @@
+import { isActiveClub } from "@/utils/clubBlocks";
 import Banner from "@/components/banner";
 import Container from "@/components/container";
 import payload from "@/payload";
@@ -71,6 +72,8 @@ export default async function StaffPage({
     },
   });
 
+  const activeClubs = clubs.docs.filter((club) => isActiveClub(club));
+
   // Fetch news articles by this author
   const newsArticles = await payload.find({
     collection: "newsArticles",
@@ -139,12 +142,12 @@ export default async function StaffPage({
         )}
       </Container>
 
-      {clubs.docs.length > 0 && (
+      {activeClubs.length > 0 && (
         <Container>
           <div className="flex flex-col gap-8">
             <H2>Clubs</H2>
             <div className="flex flex-wrap gap-12 justify-center">
-              {clubs.docs.map((club) => (
+              {activeClubs.map((club) => (
                 <ClubCard club={club} key={club.id} />
               ))}
             </div>

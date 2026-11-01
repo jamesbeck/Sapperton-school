@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   countBlockSessions,
+  getClubState,
+  isActiveClub,
   getFeaturedBlock,
   getBlockState,
   validateClubBlocks,
@@ -71,4 +73,26 @@ test("featured block favours current, then upcoming, then latest past block in L
     getFeaturedBlock([future, base], new Date("2028-01-01"))?.label,
     "Spring",
   );
+});
+
+test("club lifecycle follows dated blocks, including returning clubs and missing schedules", () => {
+  const now = new Date("2026-10-14T12:00:00Z");
+  const past = { ...base, startDate: "2026-01-01", endDate: "2026-02-01" };
+  const future = { ...base, startDate: "2027-01-01", endDate: "2027-02-01" };
+  assert.equal(getClubState(undefined, now), "unclassified");
+  assert.equal(getClubState([], now), "unclassified");
+  assert.equal(getClubState([past], now), "past");
+  assert.equal(getClubState([past, future], now), "upcoming");
+  assert.equal(getClubState([future, past, base], now), "current");
+  assert.equal(isActiveClub({ blocks: [past] }, now), false);
+  assert.equal(isActiveClub({}, now), false);
+  assert.equal(isActiveClub({ blocks: [future] }, now), true);
+  assert.equal(isActiveClub({ blocks: [{ ...base, bookingStatus: "full" }] }, now), true);
+  assert.equal(isActiveClub({ blocks: [{ ...base, bookingStatus: "closed" }] }, now), true);
+});
+
+test("club dates include the final day and change at London midnight", () => {
+  assert.equal(getClubState([base], new Date("2026-09-10T23:00:00Z")), "current");
+  assert.equal(getClubState([base], new Date("2026-10-23T22:59:59Z")), "current");
+  assert.equal(getClubState([base], new Date("2026-10-23T23:00:00Z")), "past");
 });

@@ -1,3 +1,4 @@
+import { isActiveClub } from "@/utils/clubBlocks";
 import type { Metadata, Viewport } from "next";
 import { geistSans, geistMono, bodoniModa } from "@/fonts";
 import "./globals.css";
@@ -200,7 +201,7 @@ export default async function RootLayout({
           menuItems={menuItemsGrouped}
           footerMenuItems={footerMenuItemsGrouped}
           classes={classes.docs || []}
-          clubs={clubs.docs.map(({ id, name, slug }) => ({ id, name, slug }))}
+          clubs={clubs.docs.filter((club) => isActiveClub(club)).map(({ id, name, slug }) => ({ id, name, slug }))}
         />
         <AssistantPlacementProvider>
           {children}

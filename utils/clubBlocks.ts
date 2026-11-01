@@ -145,3 +145,22 @@ export function getFeaturedBlock<T extends ClubBlock>(
     sorted.at(-1)
   );
 }
+
+export function getClubState(
+  blocks: ClubBlock[] | null | undefined,
+  now = new Date(),
+): "current" | "upcoming" | "past" | "unclassified" {
+  if (!blocks?.length) return "unclassified";
+  const states = blocks.map((block) => getBlockState(block, now));
+  if (states.includes("current")) return "current";
+  if (states.includes("upcoming")) return "upcoming";
+  return "past";
+}
+
+export function isActiveClub(
+  club: { blocks?: ClubBlock[] | null },
+  now = new Date(),
+): boolean {
+  const state = getClubState(club.blocks, now);
+  return state === "current" || state === "upcoming";
+}

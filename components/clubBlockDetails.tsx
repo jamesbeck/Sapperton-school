@@ -127,12 +127,12 @@ export default function ClubBlockDetails({ block }: { block: ClubBlock }) {
             )}
           </>
         )}
-        <Link
+        {state !== "past" && <Link
           href="/clubs#booking-information"
           className="text-sm underline underline-offset-4"
         >
           Booking policy and payment plans
-        </Link>
+        </Link>}
       </div>
     </section>
   );

@@ -1,3 +1,4 @@
+import { getClubState } from "@/utils/clubBlocks";
 import payload from "@/payload";
 import type { MetadataRoute } from "next";
 
@@ -10,6 +11,7 @@ const routes = [
   "/our-school/staff",
   "/classes",
   "/clubs",
+  "/clubs/archive",
   "/news",
   "/events",
   "/letters",
@@ -29,7 +31,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: index === 0 ? "weekly" : "monthly",
       priority: index === 0 ? 1 : 0.7,
     })),
-    ...clubs.docs.map((club) => ({
+    ...clubs.docs.filter((club) => getClubState(club.blocks) !== "unclassified").map((club) => ({
       url: `${siteUrl}/clubs/${club.slug}`,
       lastModified: club.updatedAt,
       changeFrequency: "weekly" as const,

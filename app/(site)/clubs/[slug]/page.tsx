@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { cache } from "react";
 import { notFound } from "next/navigation";
@@ -13,7 +14,7 @@ import StaffCard from "@/components/staffCard";
 import NewsCard from "@/components/newsCard";
 import ImageGallery from "@/components/imageGallery";
 import ClubBlockDetails from "@/components/clubBlockDetails";
-import { getBlockState } from "@/utils/clubBlocks";
+import { getBlockState, getClubState } from "@/utils/clubBlocks";
 
 export const revalidate = 30;
 type Props = { params: Promise<{ slug: string }> };
@@ -34,13 +35,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const club = await getClub((await params).slug);
   return {
     title: club.name,
-    description: `Find out about ${club.name} at Sapperton School, including weekly sessions, staff, photos and news.`,
+    description: getClubState(club.blocks) === "past"
+      ? `Explore ${club.name} at Sapperton School, with photos, news and past term details. Check our current and upcoming clubs for confirmed dates.`
+      : `Find out about ${club.name} at Sapperton School, including weekly sessions, staff, photos and news.`,
     alternates: { canonical: `/clubs/${club.slug}` },
   };
 }
 
 export default async function ClubPage({ params }: Props) {
   const club = await getClub((await params).slug);
+  const archived = getClubState(club.blocks) === "past";
   const banner = typeof club.banner === "object" ? club.banner : null;
   const blocks = [...(club.blocks || [])].sort((a, b) =>
     a.startDate.localeCompare(b.startDate),
@@ -95,6 +99,13 @@ export default async function ClubPage({ params }: Props) {
       <Container>
         <div className="flex flex-col gap-8">
           <H1>{club.name}</H1>
+          {archived && (
+            <div className="rounded-xl bg-sapperton-green/5 p-6 text-center">
+              <p className="font-semibold">Not currently running</p>
+              <p>We offer different clubs throughout the year, and some return in the same term each year. This club isn’t running at the moment; check our current and upcoming clubs for confirmed dates.</p>
+              <Link href="/clubs" className="mt-3 inline-block underline underline-offset-4">Explore our current clubs</Link>
+            </div>
+          )}
           <p className="text-center">{club.years}</p>
           {club.description && (
             <RichText
@@ -125,7 +136,7 @@ export default async function ClubPage({ params }: Props) {
       {staff.length > 0 && (
         <Container colour="green">
           <div className="flex flex-col gap-8 items-center">
-            <H2 className="text-white">{club.name} Team</H2>
+            <H2 className="text-white">{archived ? "Previous club team" : `${club.name} Team`}</H2>
             <div className="flex flex-wrap justify-center gap-12">
               {staff.map((person) => (
                 <StaffCard staff={person} key={person.id} />

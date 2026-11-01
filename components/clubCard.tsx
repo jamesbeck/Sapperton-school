@@ -7,11 +7,13 @@ import {
   formatBlockDate,
   formatClubPrice,
   getBlockState,
+  getClubState,
   getFeaturedBlock,
 } from "@/utils/clubBlocks";
 
 export default function ClubCard({ club }: { club: Club }) {
   const image = typeof club.image === "object" ? club.image : null;
+  const state = getClubState(club.blocks);
   const block = getFeaturedBlock(club.blocks);
   return (
     <Link
@@ -37,13 +39,23 @@ export default function ClubCard({ club }: { club: Club }) {
           <p className="mt-1 text-sm">{club.years}</p>
         </div>
       </div>
-      {block ? (
+      {state === "past" && block ? (
+        <div className="mt-auto flex flex-col gap-3 text-sm">
+          <p className="font-semibold">Not currently running</p>
+          <p>Most recent term: {block.label}</p>
+          <p>Finished {formatBlockDate(block.endDate)}</p>
+          <span className="underline underline-offset-4">Explore this club</span>
+        </div>
+      ) : block ? (
         <>
           <div className="text-sm">
             <ClubSessions sessions={block.sessions} />
           </div>
           <div className="text-sm">
             <p className="font-semibold">{block.label}</p>
+            {state === "upcoming" && <p>Upcoming club</p>}
+            {block.bookingStatus === "full" && <p>This block is full.</p>}
+            {block.bookingStatus === "closed" && <p>Bookings are closed.</p>}
             <p>
               {formatBlockDate(block.startDate)} –{" "}
               {formatBlockDate(block.endDate)}

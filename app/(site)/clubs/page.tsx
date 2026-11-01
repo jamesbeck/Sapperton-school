@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { getClubState } from "@/utils/clubBlocks";
 import type { Metadata } from "next";
 import Banner from "@/components/banner";
 import Breadcrumbs from "@/components/breadcrumbs";
@@ -23,6 +25,10 @@ export default async function ClubsPage() {
     pagination: false,
     sort: ["order", "name"],
   });
+  const now = new Date();
+  const current = clubs.docs.filter((club) => getClubState(club.blocks, now) === "current");
+  const upcoming = clubs.docs.filter((club) => getClubState(club.blocks, now) === "upcoming");
+  const hasArchive = clubs.docs.some((club) => getClubState(club.blocks, now) === "past");
   return (
     <div>
       <Banner url="/defaultBanner.jpg" focalX={50} focalY={40} />
@@ -30,16 +36,36 @@ export default async function ClubsPage() {
       <Container>
         <div className="flex flex-col gap-8">
           <H1>Our Clubs</H1>
-          {clubs.docs.length > 0 ? (
+          <H2>Current clubs</H2>
+          {current.length > 0 ? (
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {clubs.docs.map((club) => (
+              {current.map((club) => (
                 <ClubCard club={club} key={club.id} />
               ))}
             </div>
           ) : (
             <p className="text-center">
-              Details of our clubs will be available soon.
+              {upcoming.length > 0
+                ? "No clubs are running at the moment. Explore our confirmed upcoming clubs below."
+                : "Details of the next clubs will be confirmed soon."}
             </p>
+          )}
+          {upcoming.length > 0 && (
+            <section className="flex flex-col gap-6">
+              <H2>Upcoming clubs</H2>
+              <p className="text-center">Confirmed activities starting soon.</p>
+              <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                {upcoming.map((club) => <ClubCard club={club} key={club.id} />)}
+              </div>
+            </section>
+          )}
+          {hasArchive && (
+            <div className="rounded-xl bg-sapperton-green/5 p-6 text-center">
+              <p>Our clubs change with the seasons. Discover activities offered in past terms and at other times of the year.</p>
+              <Link href="/clubs/archive" className="mt-2 inline-block underline underline-offset-4">
+                Explore our clubs through the year
+              </Link>
+            </div>
           )}
         </div>
       </Container>
