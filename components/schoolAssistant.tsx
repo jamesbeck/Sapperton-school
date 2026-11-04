@@ -325,7 +325,7 @@ export default function SchoolAssistant() {
   const router = useRouter();
   const pathname = usePathname();
   const { inlineTarget } = useAssistantPlacement();
-  const isInline = pathname === "/" || pathname === "/chatbot-test";
+  const isInline = pathname === "/";
 
   const [isOpen, setIsOpen] = useState(false);
   const [suggestionIndex, setSuggestionIndex] = useState(0);
