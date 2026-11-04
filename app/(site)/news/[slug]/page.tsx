@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Banner from "@/components/banner";
 import Container from "@/components/container";
 import { notFound } from "next/navigation";
@@ -134,6 +135,30 @@ export default async function NewsArticlePage({
               {article.clubs.map((club) =>
                 typeof club === "object" && club ? (
                   <ClubCard club={club} key={club.id} />
+                ) : null,
+              )}
+            </div>
+          </div>
+        </Container>
+      )}
+      {!!article.curriculumSubjects?.some(
+        (subject) =>
+          typeof subject === "object" && subject?._status === "published",
+      ) && (
+        <Container colour="white">
+          <div className="flex flex-col gap-8">
+            <H2>Related Curriculum Subjects</H2>
+            <div className="flex gap-8 justify-center flex-wrap">
+              {article.curriculumSubjects.map((subject) =>
+                typeof subject === "object" &&
+                subject?._status === "published" ? (
+                  <Link
+                    key={subject.id}
+                    href={subject.path}
+                    className="font-semibold text-sapperton-green hover:underline"
+                  >
+                    {subject.title}
+                  </Link>
                 ) : null,
               )}
             </div>

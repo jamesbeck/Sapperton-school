@@ -31,6 +31,14 @@ export const enum__pages_v_version_status = pgEnum(
   "enum__pages_v_version_status",
   ["draft", "published"],
 );
+export const enum_curriculum_subjects_status = pgEnum(
+  "enum_curriculum_subjects_status",
+  ["draft", "published"],
+);
+export const enum__curriculum_subjects_v_version_status = pgEnum(
+  "enum__curriculum_subjects_v_version_status",
+  ["draft", "published"],
+);
 export const enum_clubs_blocks_sessions_day = pgEnum(
   "enum_clubs_blocks_sessions_day",
   [
@@ -214,6 +222,11 @@ export const pages = pgTable(
   "pages",
   {
     id: serial("id").primaryKey(),
+    migratedToCurriculumSubject: integer(
+      "migrated_to_curriculum_subject_id",
+    ).references(() => curriculum_subjects.id, {
+      onDelete: "set null",
+    }),
     title: varchar("title"),
     body: jsonb("body"),
     banner: integer("banner_id").references(() => media.id, {
@@ -236,6 +249,9 @@ export const pages = pgTable(
     _status: enum_pages_status("_status").default("draft"),
   },
   (columns) => ({
+    pages_migrated_to_curriculum_subject_idx: index(
+      "pages_migrated_to_curriculum_subject_idx",
+    ).on(columns.migratedToCurriculumSubject),
     pages_banner_idx: index("pages_banner_idx").on(columns.banner),
     pages_updated_at_idx: index("pages_updated_at_idx").on(columns.updatedAt),
     pages_created_at_idx: index("pages_created_at_idx").on(columns.createdAt),
@@ -279,6 +295,11 @@ export const _pages_v = pgTable(
     parent: integer("parent_id").references(() => pages.id, {
       onDelete: "set null",
     }),
+    version_migratedToCurriculumSubject: integer(
+      "version_migrated_to_curriculum_subject_id",
+    ).references(() => curriculum_subjects.id, {
+      onDelete: "set null",
+    }),
     version_title: varchar("version_title"),
     version_body: jsonb("version_body"),
     version_banner: integer("version_banner_id").references(() => media.id, {
@@ -314,6 +335,9 @@ export const _pages_v = pgTable(
   },
   (columns) => ({
     _pages_v_parent_idx: index("_pages_v_parent_idx").on(columns.parent),
+    _pages_v_version_version_migrated_to_curriculum_subject_idx: index(
+      "_pages_v_version_version_migrated_to_curriculum_subject_idx",
+    ).on(columns.version_migratedToCurriculumSubject),
     _pages_v_version_version_banner_idx: index(
       "_pages_v_version_version_banner_idx",
     ).on(columns.version_banner),
@@ -361,6 +385,201 @@ export const _pages_v_rels = pgTable(
       columns: [columns["mediaID"]],
       foreignColumns: [media.id],
       name: "_pages_v_rels_media_fk",
+    }).onDelete("cascade"),
+  }),
+);
+
+export const curriculum_subjects = pgTable(
+  "curriculum_subjects",
+  {
+    id: serial("id").primaryKey(),
+    title: varchar("title"),
+    body: jsonb("body"),
+    banner: integer("banner_id").references(() => media.id, {
+      onDelete: "set null",
+    }),
+    path: varchar("path"),
+    legacyPageId: numeric("legacy_page_id"),
+    legacyMenuTitle: varchar("legacy_menu_title"),
+    legacyMenuOrder: numeric("legacy_menu_order"),
+    legacyNavigation: jsonb("legacy_navigation"),
+    legacyBreadcrumbs: jsonb("legacy_breadcrumbs"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    _status: enum_curriculum_subjects_status("_status").default("draft"),
+  },
+  (columns) => ({
+    curriculum_subjects_banner_idx: index("curriculum_subjects_banner_idx").on(
+      columns.banner,
+    ),
+    curriculum_subjects_path_idx: uniqueIndex(
+      "curriculum_subjects_path_idx",
+    ).on(columns.path),
+    curriculum_subjects_legacy_page_id_idx: uniqueIndex(
+      "curriculum_subjects_legacy_page_id_idx",
+    ).on(columns.legacyPageId),
+    curriculum_subjects_updated_at_idx: index(
+      "curriculum_subjects_updated_at_idx",
+    ).on(columns.updatedAt),
+    curriculum_subjects_created_at_idx: index(
+      "curriculum_subjects_created_at_idx",
+    ).on(columns.createdAt),
+    curriculum_subjects__status_idx: index(
+      "curriculum_subjects__status_idx",
+    ).on(columns._status),
+  }),
+);
+
+export const curriculum_subjects_rels = pgTable(
+  "curriculum_subjects_rels",
+  {
+    id: serial("id").primaryKey(),
+    order: integer("order"),
+    parent: integer("parent_id").notNull(),
+    path: varchar("path").notNull(),
+    mediaID: integer("media_id"),
+  },
+  (columns) => ({
+    order: index("curriculum_subjects_rels_order_idx").on(columns.order),
+    parentIdx: index("curriculum_subjects_rels_parent_idx").on(columns.parent),
+    pathIdx: index("curriculum_subjects_rels_path_idx").on(columns.path),
+    curriculum_subjects_rels_media_id_idx: index(
+      "curriculum_subjects_rels_media_id_idx",
+    ).on(columns.mediaID),
+    parentFk: foreignKey({
+      columns: [columns["parent"]],
+      foreignColumns: [curriculum_subjects.id],
+      name: "curriculum_subjects_rels_parent_fk",
+    }).onDelete("cascade"),
+    mediaIdFk: foreignKey({
+      columns: [columns["mediaID"]],
+      foreignColumns: [media.id],
+      name: "curriculum_subjects_rels_media_fk",
+    }).onDelete("cascade"),
+  }),
+);
+
+export const _curriculum_subjects_v = pgTable(
+  "_curriculum_subjects_v",
+  {
+    id: serial("id").primaryKey(),
+    parent: integer("parent_id").references(() => curriculum_subjects.id, {
+      onDelete: "set null",
+    }),
+    version_title: varchar("version_title"),
+    version_body: jsonb("version_body"),
+    version_banner: integer("version_banner_id").references(() => media.id, {
+      onDelete: "set null",
+    }),
+    version_path: varchar("version_path"),
+    version_legacyPageId: numeric("version_legacy_page_id"),
+    version_legacyMenuTitle: varchar("version_legacy_menu_title"),
+    version_legacyMenuOrder: numeric("version_legacy_menu_order"),
+    version_legacyNavigation: jsonb("version_legacy_navigation"),
+    version_legacyBreadcrumbs: jsonb("version_legacy_breadcrumbs"),
+    version_updatedAt: timestamp("version_updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    version_createdAt: timestamp("version_created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    version__status:
+      enum__curriculum_subjects_v_version_status("version__status").default(
+        "draft",
+      ),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    latest: boolean("latest"),
+  },
+  (columns) => ({
+    _curriculum_subjects_v_parent_idx: index(
+      "_curriculum_subjects_v_parent_idx",
+    ).on(columns.parent),
+    _curriculum_subjects_v_version_version_banner_idx: index(
+      "_curriculum_subjects_v_version_version_banner_idx",
+    ).on(columns.version_banner),
+    _curriculum_subjects_v_version_version_path_idx: index(
+      "_curriculum_subjects_v_version_version_path_idx",
+    ).on(columns.version_path),
+    _curriculum_subjects_v_version_version_legacy_page_id_idx: index(
+      "_curriculum_subjects_v_version_version_legacy_page_id_idx",
+    ).on(columns.version_legacyPageId),
+    _curriculum_subjects_v_version_version_updated_at_idx: index(
+      "_curriculum_subjects_v_version_version_updated_at_idx",
+    ).on(columns.version_updatedAt),
+    _curriculum_subjects_v_version_version_created_at_idx: index(
+      "_curriculum_subjects_v_version_version_created_at_idx",
+    ).on(columns.version_createdAt),
+    _curriculum_subjects_v_version_version__status_idx: index(
+      "_curriculum_subjects_v_version_version__status_idx",
+    ).on(columns.version__status),
+    _curriculum_subjects_v_created_at_idx: index(
+      "_curriculum_subjects_v_created_at_idx",
+    ).on(columns.createdAt),
+    _curriculum_subjects_v_updated_at_idx: index(
+      "_curriculum_subjects_v_updated_at_idx",
+    ).on(columns.updatedAt),
+    _curriculum_subjects_v_latest_idx: index(
+      "_curriculum_subjects_v_latest_idx",
+    ).on(columns.latest),
+  }),
+);
+
+export const _curriculum_subjects_v_rels = pgTable(
+  "_curriculum_subjects_v_rels",
+  {
+    id: serial("id").primaryKey(),
+    order: integer("order"),
+    parent: integer("parent_id").notNull(),
+    path: varchar("path").notNull(),
+    mediaID: integer("media_id"),
+  },
+  (columns) => ({
+    order: index("_curriculum_subjects_v_rels_order_idx").on(columns.order),
+    parentIdx: index("_curriculum_subjects_v_rels_parent_idx").on(
+      columns.parent,
+    ),
+    pathIdx: index("_curriculum_subjects_v_rels_path_idx").on(columns.path),
+    _curriculum_subjects_v_rels_media_id_idx: index(
+      "_curriculum_subjects_v_rels_media_id_idx",
+    ).on(columns.mediaID),
+    parentFk: foreignKey({
+      columns: [columns["parent"]],
+      foreignColumns: [_curriculum_subjects_v.id],
+      name: "_curriculum_subjects_v_rels_parent_fk",
+    }).onDelete("cascade"),
+    mediaIdFk: foreignKey({
+      columns: [columns["mediaID"]],
+      foreignColumns: [media.id],
+      name: "_curriculum_subjects_v_rels_media_fk",
     }).onDelete("cascade"),
   }),
 );
@@ -835,6 +1054,7 @@ export const news_articles_rels = pgTable(
     path: varchar("path").notNull(),
     mediaID: integer("media_id"),
     clubsID: integer("clubs_id"),
+    curriculumSubjectsID: integer("curriculum_subjects_id"),
     classesID: integer("classes_id"),
   },
   (columns) => ({
@@ -847,6 +1067,9 @@ export const news_articles_rels = pgTable(
     news_articles_rels_clubs_id_idx: index(
       "news_articles_rels_clubs_id_idx",
     ).on(columns.clubsID),
+    news_articles_rels_curriculum_subjects_id_idx: index(
+      "news_articles_rels_curriculum_subjects_id_idx",
+    ).on(columns.curriculumSubjectsID),
     news_articles_rels_classes_id_idx: index(
       "news_articles_rels_classes_id_idx",
     ).on(columns.classesID),
@@ -864,6 +1087,11 @@ export const news_articles_rels = pgTable(
       columns: [columns["clubsID"]],
       foreignColumns: [clubs.id],
       name: "news_articles_rels_clubs_fk",
+    }).onDelete("cascade"),
+    curriculumSubjectsIdFk: foreignKey({
+      columns: [columns["curriculumSubjectsID"]],
+      foreignColumns: [curriculum_subjects.id],
+      name: "news_articles_rels_curriculum_subjects_fk",
     }).onDelete("cascade"),
     classesIdFk: foreignKey({
       columns: [columns["classesID"]],
@@ -1136,6 +1364,7 @@ export const payload_locked_documents_rels = pgTable(
     menuItemsID: integer("menu_items_id"),
     footerMenuItemsID: integer("footer_menu_items_id"),
     pagesID: integer("pages_id"),
+    curriculumSubjectsID: integer("curriculum_subjects_id"),
     staffID: integer("staff_id"),
     staffGroupsID: integer("staff_groups_id"),
     classesID: integer("classes_id"),
@@ -1162,6 +1391,9 @@ export const payload_locked_documents_rels = pgTable(
     payload_locked_documents_rels_pages_id_idx: index(
       "payload_locked_documents_rels_pages_id_idx",
     ).on(columns.pagesID),
+    payload_locked_documents_rels_curriculum_subjects_id_idx: index(
+      "payload_locked_documents_rels_curriculum_subjects_id_idx",
+    ).on(columns.curriculumSubjectsID),
     payload_locked_documents_rels_staff_id_idx: index(
       "payload_locked_documents_rels_staff_id_idx",
     ).on(columns.staffID),
@@ -1211,6 +1443,11 @@ export const payload_locked_documents_rels = pgTable(
       columns: [columns["pagesID"]],
       foreignColumns: [pages.id],
       name: "payload_locked_documents_rels_pages_fk",
+    }).onDelete("cascade"),
+    curriculumSubjectsIdFk: foreignKey({
+      columns: [columns["curriculumSubjectsID"]],
+      foreignColumns: [curriculum_subjects.id],
+      name: "payload_locked_documents_rels_curriculum_subjects_fk",
     }).onDelete("cascade"),
     staffIdFk: foreignKey({
       columns: [columns["staffID"]],
@@ -1513,6 +1750,11 @@ export const relations_pages_rels = relations(pages_rels, ({ one }) => ({
   }),
 }));
 export const relations_pages = relations(pages, ({ one, many }) => ({
+  migratedToCurriculumSubject: one(curriculum_subjects, {
+    fields: [pages.migratedToCurriculumSubject],
+    references: [curriculum_subjects.id],
+    relationName: "migratedToCurriculumSubject",
+  }),
   banner: one(media, {
     fields: [pages.banner],
     references: [media.id],
@@ -1540,6 +1782,11 @@ export const relations__pages_v = relations(_pages_v, ({ one, many }) => ({
     references: [pages.id],
     relationName: "parent",
   }),
+  version_migratedToCurriculumSubject: one(curriculum_subjects, {
+    fields: [_pages_v.version_migratedToCurriculumSubject],
+    references: [curriculum_subjects.id],
+    relationName: "version_migratedToCurriculumSubject",
+  }),
   version_banner: one(media, {
     fields: [_pages_v.version_banner],
     references: [media.id],
@@ -1549,6 +1796,67 @@ export const relations__pages_v = relations(_pages_v, ({ one, many }) => ({
     relationName: "_rels",
   }),
 }));
+export const relations_curriculum_subjects_rels = relations(
+  curriculum_subjects_rels,
+  ({ one }) => ({
+    parent: one(curriculum_subjects, {
+      fields: [curriculum_subjects_rels.parent],
+      references: [curriculum_subjects.id],
+      relationName: "_rels",
+    }),
+    mediaID: one(media, {
+      fields: [curriculum_subjects_rels.mediaID],
+      references: [media.id],
+      relationName: "media",
+    }),
+  }),
+);
+export const relations_curriculum_subjects = relations(
+  curriculum_subjects,
+  ({ one, many }) => ({
+    banner: one(media, {
+      fields: [curriculum_subjects.banner],
+      references: [media.id],
+      relationName: "banner",
+    }),
+    _rels: many(curriculum_subjects_rels, {
+      relationName: "_rels",
+    }),
+  }),
+);
+export const relations__curriculum_subjects_v_rels = relations(
+  _curriculum_subjects_v_rels,
+  ({ one }) => ({
+    parent: one(_curriculum_subjects_v, {
+      fields: [_curriculum_subjects_v_rels.parent],
+      references: [_curriculum_subjects_v.id],
+      relationName: "_rels",
+    }),
+    mediaID: one(media, {
+      fields: [_curriculum_subjects_v_rels.mediaID],
+      references: [media.id],
+      relationName: "media",
+    }),
+  }),
+);
+export const relations__curriculum_subjects_v = relations(
+  _curriculum_subjects_v,
+  ({ one, many }) => ({
+    parent: one(curriculum_subjects, {
+      fields: [_curriculum_subjects_v.parent],
+      references: [curriculum_subjects.id],
+      relationName: "parent",
+    }),
+    version_banner: one(media, {
+      fields: [_curriculum_subjects_v.version_banner],
+      references: [media.id],
+      relationName: "version_banner",
+    }),
+    _rels: many(_curriculum_subjects_v_rels, {
+      relationName: "_rels",
+    }),
+  }),
+);
 export const relations_staff_rels = relations(staff_rels, ({ one }) => ({
   parent: one(staff, {
     fields: [staff_rels.parent],
@@ -1710,6 +2018,11 @@ export const relations_news_articles_rels = relations(
       references: [clubs.id],
       relationName: "clubs",
     }),
+    curriculumSubjectsID: one(curriculum_subjects, {
+      fields: [news_articles_rels.curriculumSubjectsID],
+      references: [curriculum_subjects.id],
+      relationName: "curriculumSubjects",
+    }),
     classesID: one(classes, {
       fields: [news_articles_rels.classesID],
       references: [classes.id],
@@ -1797,6 +2110,11 @@ export const relations_payload_locked_documents_rels = relations(
       fields: [payload_locked_documents_rels.pagesID],
       references: [pages.id],
       relationName: "pages",
+    }),
+    curriculumSubjectsID: one(curriculum_subjects, {
+      fields: [payload_locked_documents_rels.curriculumSubjectsID],
+      references: [curriculum_subjects.id],
+      relationName: "curriculumSubjects",
     }),
     staffID: one(staff, {
       fields: [payload_locked_documents_rels.staffID],
@@ -1918,6 +2236,8 @@ export const relations_club_information = relations(
 type DatabaseSchema = {
   enum_pages_status: typeof enum_pages_status;
   enum__pages_v_version_status: typeof enum__pages_v_version_status;
+  enum_curriculum_subjects_status: typeof enum_curriculum_subjects_status;
+  enum__curriculum_subjects_v_version_status: typeof enum__curriculum_subjects_v_version_status;
   enum_clubs_blocks_sessions_day: typeof enum_clubs_blocks_sessions_day;
   enum_clubs_blocks_booking_method: typeof enum_clubs_blocks_booking_method;
   enum_clubs_blocks_booking_status: typeof enum_clubs_blocks_booking_status;
@@ -1930,6 +2250,10 @@ type DatabaseSchema = {
   pages_rels: typeof pages_rels;
   _pages_v: typeof _pages_v;
   _pages_v_rels: typeof _pages_v_rels;
+  curriculum_subjects: typeof curriculum_subjects;
+  curriculum_subjects_rels: typeof curriculum_subjects_rels;
+  _curriculum_subjects_v: typeof _curriculum_subjects_v;
+  _curriculum_subjects_v_rels: typeof _curriculum_subjects_v_rels;
   staff: typeof staff;
   staff_rels: typeof staff_rels;
   staff_groups: typeof staff_groups;
@@ -1966,6 +2290,10 @@ type DatabaseSchema = {
   relations_pages: typeof relations_pages;
   relations__pages_v_rels: typeof relations__pages_v_rels;
   relations__pages_v: typeof relations__pages_v;
+  relations_curriculum_subjects_rels: typeof relations_curriculum_subjects_rels;
+  relations_curriculum_subjects: typeof relations_curriculum_subjects;
+  relations__curriculum_subjects_v_rels: typeof relations__curriculum_subjects_v_rels;
+  relations__curriculum_subjects_v: typeof relations__curriculum_subjects_v;
   relations_staff_rels: typeof relations_staff_rels;
   relations_staff: typeof relations_staff;
   relations_staff_groups: typeof relations_staff_groups;

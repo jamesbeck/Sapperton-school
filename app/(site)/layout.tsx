@@ -1,3 +1,4 @@
+import { sortSubjects } from "@/utils/curriculum";
 import { isActiveClub } from "@/utils/clubBlocks";
 import type { Metadata, Viewport } from "next";
 import { geistSans, geistMono, bodoniModa } from "@/fonts";
@@ -101,32 +102,39 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [menuItems, classes, clubs, footerMenuItems] = await Promise.all([
-    payload.find({
-      collection: "menuItems",
-      depth: 1,
-      limit: 1000,
-      sort: ["-parent", "order", "id"],
-    }),
-    payload.find({
-      collection: "classes",
-      depth: 1,
-      limit: 1000,
-      sort: "order",
-    }),
-    payload.find({
-      collection: "clubs",
-      depth: 0,
-      pagination: false,
-      sort: ["order", "name"],
-    }),
-    payload.find({
-      collection: "footerMenuItems",
-      depth: 1,
-      limit: 1000,
-      sort: ["-parent", "order", "id"],
-    }),
-  ]);
+  const [menuItems, classes, clubs, footerMenuItems, subjects] =
+    await Promise.all([
+      payload.find({
+        collection: "menuItems",
+        depth: 1,
+        limit: 1000,
+        sort: ["-parent", "order", "id"],
+      }),
+      payload.find({
+        collection: "classes",
+        depth: 1,
+        limit: 1000,
+        sort: "order",
+      }),
+      payload.find({
+        collection: "clubs",
+        depth: 0,
+        pagination: false,
+        sort: ["order", "name"],
+      }),
+      payload.find({
+        collection: "footerMenuItems",
+        depth: 1,
+        limit: 1000,
+        sort: ["-parent", "order", "id"],
+      }),
+      payload.find({
+        collection: "curriculumSubjects",
+        depth: 0,
+        pagination: false,
+        where: { _status: { equals: "published" } },
+      }),
+    ]);
 
   const menuItemsGrouped: GroupedMenuItem[] = menuItems.docs.reduce(
     (acc, item) => {
@@ -136,7 +144,7 @@ export default async function RootLayout({
           title: item.title,
           href:
             item.url ||
-            item.breadcrumbs?.[item.breadcrumbs.length - 1].url ||
+            item.breadcrumbs?.[item.breadcrumbs.length - 1]?.url ||
             "",
           children: [],
         });
@@ -148,7 +156,7 @@ export default async function RootLayout({
             title: item.title,
             href:
               item.url ||
-              item.breadcrumbs?.[item.breadcrumbs.length - 1].url ||
+              item.breadcrumbs?.[item.breadcrumbs.length - 1]?.url ||
               "",
             children: [],
           });
@@ -159,6 +167,25 @@ export default async function RootLayout({
     [] as GroupedMenuItem[],
   );
 
+  // Keep the legacy section during rollout until subject data has been migrated.
+  if (subjects.docs.length) {
+    const previousIndex = menuItemsGrouped.findIndex(
+      (item) => item.title === "Curriculum",
+    );
+    if (previousIndex !== -1) menuItemsGrouped.splice(previousIndex, 1);
+    menuItemsGrouped.push({
+      id: -2,
+      title: "Curriculum",
+      href: "",
+      children: sortSubjects(subjects.docs).map((subject) => ({
+        id: subject.id,
+        title: subject.legacyMenuTitle || subject.title,
+        href: subject.path,
+        children: [],
+      })),
+    });
+  }
+
   const footerMenuItemsGrouped: GroupedMenuItem[] = footerMenuItems.docs.reduce(
     (acc, item) => {
       if (!item.parent) {
@@ -167,7 +194,7 @@ export default async function RootLayout({
           title: item.title,
           href:
             item.url ||
-            item.breadcrumbs?.[item.breadcrumbs.length - 1].url ||
+            item.breadcrumbs?.[item.breadcrumbs.length - 1]?.url ||
             "",
           children: [],
         });
@@ -181,7 +208,7 @@ export default async function RootLayout({
             title: item.title,
             href:
               item.url ||
-              item.breadcrumbs?.[item.breadcrumbs.length - 1].url ||
+              item.breadcrumbs?.[item.breadcrumbs.length - 1]?.url ||
               "",
             children: [],
           });
@@ -201,7 +228,9 @@ export default async function RootLayout({
           menuItems={menuItemsGrouped}
           footerMenuItems={footerMenuItemsGrouped}
           classes={classes.docs || []}
-          clubs={clubs.docs.filter((club) => isActiveClub(club)).map(({ id, name, slug }) => ({ id, name, slug }))}
+          clubs={clubs.docs
+            .filter((club) => isActiveClub(club))
+            .map(({ id, name, slug }) => ({ id, name, slug }))}
         />
         <AssistantPlacementProvider>
           {children}

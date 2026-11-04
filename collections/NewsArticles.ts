@@ -67,6 +67,14 @@ export const NewsArticles: CollectionConfig = {
       hasMany: true,
     },
     {
+      name: "curriculumSubjects",
+      label: "Curriculum subjects",
+      type: "relationship",
+      relationTo: "curriculumSubjects",
+      hasMany: true,
+      filterOptions: { _status: { equals: "published" } },
+    },
+    {
       name: "classes",
       type: "relationship",
       relationTo: "classes",

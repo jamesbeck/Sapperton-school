@@ -16,6 +16,7 @@ import { StaffGroups } from "./collections/StaffGroups";
 import { Classes } from "./collections/Classes";
 import { Clubs } from "./collections/Clubs";
 import { Events } from "./collections/Events";
+import { CurriculumSubjects } from "./collections/CurriculumSubjects";
 import { Pages } from "./collections/Pages";
 import { MenuItems } from "./collections/MenuItems";
 import { FooterMenuItems } from "./collections/FooterMenuItems";
@@ -55,6 +56,7 @@ export default buildConfig({
     MenuItems,
     FooterMenuItems,
     Pages,
+    CurriculumSubjects,
     Staff,
     StaffGroups,
     Classes,

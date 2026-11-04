@@ -25,17 +25,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     depth: 0,
     pagination: false,
   });
+  const subjects = await payload.find({
+    collection: "curriculumSubjects",
+    depth: 0,
+    pagination: false,
+    where: { _status: { equals: "published" } },
+  });
   return [
+    ...subjects.docs.map((subject) => ({
+      url: `${siteUrl}${subject.path}`,
+      lastModified: subject.updatedAt,
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    })),
     ...routes.map<MetadataRoute.Sitemap[number]>((route, index) => ({
       url: `${siteUrl}${route}`,
       changeFrequency: index === 0 ? "weekly" : "monthly",
       priority: index === 0 ? 1 : 0.7,
     })),
-    ...clubs.docs.filter((club) => getClubState(club.blocks) !== "unclassified").map((club) => ({
-      url: `${siteUrl}/clubs/${club.slug}`,
-      lastModified: club.updatedAt,
-      changeFrequency: "weekly" as const,
-      priority: 0.6,
-    })),
+    ...clubs.docs
+      .filter((club) => getClubState(club.blocks) !== "unclassified")
+      .map((club) => ({
+        url: `${siteUrl}/clubs/${club.slug}`,
+        lastModified: club.updatedAt,
+        changeFrequency: "weekly" as const,
+        priority: 0.6,
+      })),
   ];
 }

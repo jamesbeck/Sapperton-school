@@ -70,6 +70,7 @@ export interface Config {
     menuItems: MenuItem;
     footerMenuItems: FooterMenuItem;
     pages: Page;
+    curriculumSubjects: CurriculumSubject;
     staff: Staff;
     staffGroups: StaffGroup;
     classes: Class;
@@ -93,6 +94,7 @@ export interface Config {
     menuItems: MenuItemsSelect<false> | MenuItemsSelect<true>;
     footerMenuItems: FooterMenuItemsSelect<false> | FooterMenuItemsSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
+    curriculumSubjects: CurriculumSubjectsSelect<false> | CurriculumSubjectsSelect<true>;
     staff: StaffSelect<false> | StaffSelect<true>;
     staffGroups: StaffGroupsSelect<false> | StaffGroupsSelect<true>;
     classes: ClassesSelect<false> | ClassesSelect<true>;
@@ -176,6 +178,10 @@ export interface MenuItem {
  */
 export interface Page {
   id: number;
+  /**
+   * Archived original. Edit the linked Curriculum Subject instead.
+   */
+  migratedToCurriculumSubject?: (number | null) | CurriculumSubject;
   title: string;
   body: {
     root: {
@@ -195,6 +201,60 @@ export interface Page {
   banner?: (number | null) | Media;
   galleryImages?: (number | Media)[] | null;
   files?: (number | Media)[] | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "curriculumSubjects".
+ */
+export interface CurriculumSubject {
+  id: number;
+  title: string;
+  body: {
+    root: {
+      type: string;
+      children: {
+        type: string;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  banner?: (number | null) | Media;
+  galleryImages?: (number | Media)[] | null;
+  files?: (number | Media)[] | null;
+  /**
+   * Preserved when the subject is renamed.
+   */
+  path: string;
+  legacyPageId?: number | null;
+  legacyMenuTitle?: string | null;
+  legacyMenuOrder?: number | null;
+  legacyNavigation?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  legacyBreadcrumbs?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -527,6 +587,7 @@ export interface NewsArticle {
   banner?: (number | null) | Media;
   gallery?: (number | Media)[] | null;
   clubs?: (number | Club)[] | null;
+  curriculumSubjects?: (number | CurriculumSubject)[] | null;
   classes?: (number | Class)[] | null;
   updatedAt: string;
   createdAt: string;
@@ -585,6 +646,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'pages';
         value: number | Page;
+      } | null)
+    | ({
+        relationTo: 'curriculumSubjects';
+        value: number | CurriculumSubject;
       } | null)
     | ({
         relationTo: 'staff';
@@ -717,11 +782,32 @@ export interface FooterMenuItemsSelect<T extends boolean = true> {
  * via the `definition` "pages_select".
  */
 export interface PagesSelect<T extends boolean = true> {
+  migratedToCurriculumSubject?: T;
   title?: T;
   body?: T;
   banner?: T;
   galleryImages?: T;
   files?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "curriculumSubjects_select".
+ */
+export interface CurriculumSubjectsSelect<T extends boolean = true> {
+  title?: T;
+  body?: T;
+  banner?: T;
+  galleryImages?: T;
+  files?: T;
+  path?: T;
+  legacyPageId?: T;
+  legacyMenuTitle?: T;
+  legacyMenuOrder?: T;
+  legacyNavigation?: T;
+  legacyBreadcrumbs?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
@@ -848,6 +934,7 @@ export interface NewsArticlesSelect<T extends boolean = true> {
   banner?: T;
   gallery?: T;
   clubs?: T;
+  curriculumSubjects?: T;
   classes?: T;
   updatedAt?: T;
   createdAt?: T;

@@ -12,7 +12,9 @@
     "generate:types": "PAYLOAD_CONFIG_PATH=payload.config.ts payload generate:types",
     "migrate:parent-letters": "tsx scripts/migrate-parent-letters.ts",
     "test:clubs": "node --import tsx scripts/verify-clubs.ts",
-    "migrate": "PAYLOAD_CONFIG_PATH=payload.config.ts payload migrate"
+    "migrate": "PAYLOAD_CONFIG_PATH=payload.config.ts payload migrate",
+    "migrate:curriculum:cleanup": "node scripts/cleanup-curriculum-menu.mjs",
+    "test:curriculum": "node --import tsx scripts/verify-curriculum.ts"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

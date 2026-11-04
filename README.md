@@ -74,3 +74,61 @@ CLUBS_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:55484/sapperton_clubs_te
 The check refuses other database names or non-local hosts, exercises migration
 up/down and CMS validation, and leaves fixtures for browser testing. It does not
 use the configured school database. Schedule unit tests run with `npm test`.
+
+### Curriculum Subjects rollout
+
+Curriculum subjects keep their exact existing `/curriculum/...` paths. The new
+collection stores subject content, media, drafts and revision history. The header
+builds the Curriculum section last, sorting its visible subject labels alphabetically.
+News articles can tag multiple subjects; subject pages show the six latest tagged
+articles, and articles link back to published subjects. Empty sections are hidden.
+
+Before rollout, pause curriculum editing briefly and take a database-provider
+backup/snapshot. Review `payload migrate:status`, then run the registered migrations
+with `npm run migrate` against the intended database before building the new app.
+The two November curriculum migrations add the schema and copy page content,
+ordered media relationships and **all** versions. They preserve page IDs in
+`legacyPageId`, original menu labels, breadcrumbs, timestamps and complete menu
+rows. Original Pages and their versions remain stored, are hidden from the Pages
+list, and cannot be updated/deleted through normal editor access.
+
+Deploy the application and verify each of the 15 existing curriculum URLs, preview,
+media, alphabetical navigation and news tags. **Do not remove the old menu records
+before the new application is serving traffic.** They keep the old deployment
+working while the new one is prepared. Then run:
+
+```sh
+npm run migrate:curriculum:cleanup              # dry-run; no changes committed
+npm run migrate:curriculum:cleanup -- --apply  # remove only archived menu records
+```
+
+Cleanup refuses to remove menus/breadcrumbs edited after migration, unexpected new
+children, or original Pages edited after conversion. Reconcile any such edits first.
+It preserves all original content and the complete navigation archive. Website
+caches refresh within 30 seconds. No existing news tags are changed or inferred.
+
+For an application rollback, restore the original navigation **before** switching
+back to the old code:
+
+```sh
+npm run migrate:curriculum:cleanup -- --restore --apply
+```
+
+This restores exact menu IDs, labels, hierarchy, order and breadcrumbs, without
+removing new subject content or news tags. Original Pages represent the content at
+conversion time; reconcile subsequent subject edits before rolling back. The data
+migration deliberately refuses destructive `down` operations.
+
+Verification uses synthetic records, never exports live page bodies/history, and
+requires a disposable local `sapperton_curriculum_test` database containing the old
+schema but no rows:
+
+```sh
+CURRICULUM_TEST_DATABASE_URL=postgresql://...@127.0.0.1:55485/sapperton_curriculum_test npm run test:curriculum
+node --import tsx --test utils/*.test.ts
+npx tsc --noEmit
+```
+
+The integration check verifies all content/version fields and media ordering,
+unchanged URLs after renaming, draft/public separation, rerun safety, menu cleanup
+and exact restoration, conflict guards, original retention and two-way news tags.

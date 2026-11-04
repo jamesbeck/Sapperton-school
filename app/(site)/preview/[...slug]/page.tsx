@@ -1,3 +1,4 @@
+import CurriculumSubjectPage from "@/components/curriculumSubjectPage";
 import { getPayload } from "payload";
 import configPromise from "@payload-config";
 import Banner from "@/components/banner";
@@ -11,13 +12,13 @@ export default async function ContentPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string[] }>;
   searchParams: Promise<{ key: string }>;
 }) {
   const slug = (await params).slug;
   const previewKey = (await searchParams).key;
 
-  if (previewKey !== process.env.PREVIEW_KEY) {
+  if (!process.env.PREVIEW_KEY || previewKey !== process.env.PREVIEW_KEY) {
     return notFound();
   }
 
@@ -25,6 +26,26 @@ export default async function ContentPage({
   const finalSlug = slug[slug.length - 1];
 
   const payload = await getPayload({ config: configPromise });
+
+  if (slug[0] === "curriculum") {
+    const subjects = await payload.find({
+      collection: "curriculumSubjects",
+      depth: 2,
+      draft: true,
+      limit: 1,
+      where: { path: { equals: `/${slug.join("/")}` } },
+    });
+    if (subjects.docs[0])
+      return (
+        <>
+          <RefreshRouteOnSave />
+          <div className="fixed -rotate-45 top-24 left-8 text-5xl z-100 text-red-500/70 font-bold">
+            Preview
+          </div>
+          <CurriculumSubjectPage subject={subjects.docs[0]} />
+        </>
+      );
+  }
 
   const menuItems = await payload.find({
     collection: "menuItems",

@@ -77,6 +77,13 @@ export default function Header({
       clubsItem,
     );
   }
+  // Curriculum stays last even when other generated menu sections are inserted.
+  const curriculumIndex = navigationItems.findIndex(
+    (item) => item.title === "Curriculum",
+  );
+  if (curriculumIndex !== -1) {
+    navigationItems.push(...navigationItems.splice(curriculumIndex, 1));
+  }
   const [open, setOpen] = useState(false);
   const [openSection, setOpenSection] = useState<number | null>(null);
   const [logoOpacity, setLogoOpacity] = useState(1);
