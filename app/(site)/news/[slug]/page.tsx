@@ -14,7 +14,7 @@ import ClubCard from "@/components/clubCard";
 import ClassCard from "@/components/classCard";
 import NewsCard from "@/components/newsCard";
 
-export const revalidate = 30;
+export const revalidate = 3600;
 
 export default async function NewsArticlePage({
   params,

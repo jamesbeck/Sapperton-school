@@ -9,7 +9,7 @@ import H1 from "@/components/ui/h1";
 import H2 from "@/components/ui/h2";
 import payload from "@/payload";
 
-export const revalidate = 30;
+export const revalidate = 3600;
 export const metadata: Metadata = {
   title: "Our Clubs",
   description:

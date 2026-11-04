@@ -8,7 +8,7 @@ import H1 from "@/components/ui/h1";
 import payload from "@/payload";
 import { getClubState } from "@/utils/clubBlocks";
 
-export const revalidate = 30;
+export const revalidate = 3600;
 export const metadata: Metadata = {
   title: "Clubs through the year",
   description: "Discover clubs offered in past terms and at different times of the year at Sapperton School.",

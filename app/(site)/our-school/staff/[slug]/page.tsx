@@ -13,7 +13,7 @@ import NewsCard from "@/components/newsCard";
 import H1 from "@/components/ui/h1";
 import Image from "next/image";
 
-export const revalidate = 30;
+export const revalidate = 3600;
 
 export default async function StaffPage({
   params,
@@ -173,4 +173,14 @@ export default async function StaffPage({
       </Container>
     </div>
   );
+}
+
+export async function generateStaticParams() {
+  const records = await payload.find({
+    collection: "staff",
+    depth: 0,
+    pagination: false,
+    select: { slug: true },
+  });
+  return records.docs.map((record) => ({ slug: String(record.slug) }));
 }

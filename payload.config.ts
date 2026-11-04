@@ -26,6 +26,16 @@ import slugify from "slugify";
 import { HeroWords } from "./globals/heroWords";
 import { HeadteacherWelcome } from "./globals/headteacherWelcome";
 import { ClubInformation } from "./globals/clubInformation";
+import { revalidatePath } from "next/cache";
+import {
+  withSiteRevalidation,
+  withGlobalSiteRevalidation,
+} from "./utils/siteRevalidation";
+
+const invalidateSite = () => {
+  revalidatePath("/(site)", "layout");
+  revalidatePath("/sitemap.xml");
+};
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -65,9 +75,10 @@ export default buildConfig({
     NewsArticles,
     Letters,
     Media,
-    Users,
-  ],
-  globals: [HeroWords, HeadteacherWelcome, ClubInformation],
+  ].map((collection) => withSiteRevalidation(collection, invalidateSite)).concat(Users),
+  globals: [HeroWords, HeadteacherWelcome, ClubInformation].map((global) =>
+    withGlobalSiteRevalidation(global, invalidateSite),
+  ),
   editor: lexicalEditor({
     features: ({ defaultFeatures }) =>
       defaultFeatures

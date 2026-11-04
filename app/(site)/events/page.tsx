@@ -5,7 +5,7 @@ import H1 from "@/components/ui/h1";
 import EventsCalendar from "@/components/eventsCalendar";
 import payload from "@/payload";
 
-export const revalidate = 30;
+export const revalidate = 3600;
 
 export default async function EventsPage() {
   const eventsResult = await payload.find({

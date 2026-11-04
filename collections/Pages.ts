@@ -1,4 +1,3 @@
-import { revalidatePath } from "next/cache";
 import type { CollectionConfig } from "payload";
 
 export const Pages: CollectionConfig = {
@@ -17,28 +16,6 @@ export const Pages: CollectionConfig = {
     drafts: {
       autosave: false,
     },
-  },
-  hooks: {
-    afterChange: [
-      //when a page is saved, regenerate the path
-      async ({ doc, req: { payload } }) => {
-        const menuItems = await payload.find({
-          collection: "menuItems",
-          where: {
-            "page.id": {
-              equals: doc.id,
-            },
-          },
-          depth: 1,
-          // id: "507f1f77bcf86cd799439011",
-        });
-
-        menuItems.docs.forEach((item) => {
-          const path = item.breadcrumbs?.[item.breadcrumbs.length - 1].url;
-          if (path) revalidatePath(path);
-        });
-      },
-    ],
   },
 
   access: {

@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import type { Page } from "@/payload-types";
 import payload from "@/payload";
 
-export const revalidate = 30;
+export const revalidate = 3600;
 
 export default async function ContentPage({
   params,

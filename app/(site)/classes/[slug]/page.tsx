@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import Banner from "@/components/banner";
 import Container from "@/components/container";
 import payload from "@/payload";
@@ -21,7 +22,7 @@ import {
   MusicIcon,
 } from "lucide-react";
 
-export const revalidate = 30;
+export const revalidate = 3600;
 
 function getFileIcon(filename: string) {
   const ext = filename.split(".").pop()?.toLowerCase();
@@ -76,6 +77,7 @@ export default async function StaffPage({
   });
 
   const schoolClass = schoolClasses.docs?.[0];
+  if (!schoolClass) notFound();
   const image = schoolClass?.image as Media;
   const banner = schoolClass?.banner as Media;
 
@@ -268,4 +270,14 @@ export default async function StaffPage({
       )}
     </div>
   );
+}
+
+export async function generateStaticParams() {
+  const records = await payload.find({
+    collection: "classes",
+    depth: 0,
+    pagination: false,
+    select: { slug: true },
+  });
+  return records.docs.map((record) => ({ slug: String(record.slug) }));
 }

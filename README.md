@@ -132,3 +132,33 @@ npx tsc --noEmit
 The integration check verifies all content/version fields and media ordering,
 unchanged URLs after renaming, draft/public separation, rerun safety, menu cleanup
 and exact restoration, conflict guards, original retention and two-way news tags.
+
+## Public page caching
+
+Public pages use one-hour Incremental Static Regeneration (ISR), rather than
+30-second revalidation. Existing content, news, class, club, event and staff
+detail pages are pre-rendered during production builds. Newly created URLs render
+on their first visit and are then cached. Preview remains request-rendered.
+
+`payload.config.ts` registers shared `afterChange` and `afterDelete` hooks for
+every public content collection (excluding users), plus `afterChange` for all
+globals. These invalidate the `/(site)` layout, its pages, and the sitemap. This deliberately
+covers shared navigation, media, related content, old URLs after renames, deleted
+records, and both main-menu and footer pages without fragile per-record mappings.
+It does mean a CMS save invalidates all public pages, not just the edited page.
+Pages regenerate on their next visit; saves do not eagerly rebuild the website
+or push updated content into already-open visitor tabs.
+
+The hourly fallback is needed even without CMS edits because upcoming events and
+club states change with the clock. Time-based ISR serves cached content while
+refreshing in the background, so this is a refresh interval, not a strict freshness
+deadline. The calendar subscription feed retains its separate five-minute cache.
+
+Scripts using Payload outside Next.js must pass
+`context: { skipRevalidation: true }` and arrange a deployment or invalidation
+afterwards. CMS edits through the deployed application invalidate its own cache;
+direct SQL changes or changes from a separate CMS deployment do not.
+
+Validate caching with `npm run build` and `npm start`; development mode does not
+represent production caching. Smoke-test a CMS save and deletion against affected
+pages after deploying, including related listings and a footer-linked content page.

@@ -9,7 +9,7 @@ import { notFound } from "next/navigation";
 import { Calendar, Clock, Tag } from "lucide-react";
 import { Media, Class } from "@/payload-types";
 
-export const revalidate = 30;
+export const revalidate = 3600;
 
 export default async function EventDetailPage({
   params,
@@ -205,4 +205,14 @@ export default async function EventDetailPage({
       )}
     </div>
   );
+}
+
+export async function generateStaticParams() {
+  const records = await payload.find({
+    collection: "events",
+    depth: 0,
+    pagination: false,
+    select: { name: true },
+  });
+  return records.docs.map((record) => ({ id: String(record.id) }));
 }

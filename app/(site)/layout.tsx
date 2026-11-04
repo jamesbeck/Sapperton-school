@@ -13,8 +13,8 @@ import { Analytics } from "@vercel/analytics/react";
 import SchoolAssistant from "@/components/schoolAssistant";
 import { AssistantPlacementProvider } from "@/components/assistantPlacement";
 
-// Revalidate menu structure every 30 seconds
-export const revalidate = 30;
+// CMS hooks invalidate content changes; hourly ISR also refreshes date-based menus.
+export const revalidate = 3600;
 
 const payload = await getPayload({ config: configPromise });
 

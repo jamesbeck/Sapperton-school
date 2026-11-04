@@ -1,6 +1,5 @@
 import type { CollectionConfig } from "payload";
 import slugify from "slugify";
-import { revalidatePath } from "next/cache";
 
 export const CurriculumSubjects: CollectionConfig = {
   slug: "curriculumSubjects",
@@ -61,16 +60,6 @@ export const CurriculumSubjects: CollectionConfig = {
           data.path = candidate;
         }
         return data;
-      },
-    ],
-    afterChange: [
-      ({ req }) => {
-        if (!req.context.skipRevalidation) revalidatePath("/", "layout");
-      },
-    ],
-    afterDelete: [
-      ({ req }) => {
-        if (!req.context.skipRevalidation) revalidatePath("/", "layout");
       },
     ],
   },

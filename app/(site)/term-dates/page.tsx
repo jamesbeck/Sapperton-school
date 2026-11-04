@@ -3,7 +3,7 @@ import configPromise from "@payload-config";
 import Banner from "@/components/banner";
 import Container from "@/components/container";
 
-export const revalidate = 30;
+export const revalidate = 3600;
 
 export default async function TermDates() {
   const payload = await getPayload({ config: configPromise });

@@ -16,7 +16,7 @@ import ImageGallery from "@/components/imageGallery";
 import ClubBlockDetails from "@/components/clubBlockDetails";
 import { getBlockState, getClubState } from "@/utils/clubBlocks";
 
-export const revalidate = 30;
+export const revalidate = 3600;
 type Props = { params: Promise<{ slug: string }> };
 
 const getClub = cache(async (slug: string) => {
@@ -169,4 +169,14 @@ export default async function ClubPage({ params }: Props) {
       </Container>
     </div>
   );
+}
+
+export async function generateStaticParams() {
+  const records = await payload.find({
+    collection: "clubs",
+    depth: 0,
+    pagination: false,
+    select: { slug: true },
+  });
+  return records.docs.map((record) => ({ slug: String(record.slug) }));
 }

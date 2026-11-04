@@ -1,4 +1,3 @@
-import { revalidatePath } from "next/cache";
 import type { CollectionConfig } from "payload";
 import slugify from "slugify";
 
@@ -41,11 +40,6 @@ export const MenuItems: CollectionConfig = {
           }
         }
         return data;
-      },
-    ],
-    afterChange: [
-      async () => {
-        revalidatePath("/", "layout");
       },
     ],
   },

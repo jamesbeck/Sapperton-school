@@ -14,7 +14,7 @@ import Link from "next/link";
 import { CalendarDays } from "lucide-react";
 import type { Metadata } from "next";
 
-export const revalidate = 30;
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   alternates: {
