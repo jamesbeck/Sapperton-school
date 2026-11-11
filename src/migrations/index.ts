@@ -1,3 +1,4 @@
+import * as migration_20261111_083704_add_class_pe_days from "./20261111_083704_add_class_pe_days";
 import * as migrateCurriculumPages from "./20261104_055255_migrate_curriculum_pages";
 import * as migration_20251202_115553_add_footer_menu_items from "./20251202_115553_add_footer_menu_items";
 import * as migration_20260413_065748_add_letters_collection from "./20260413_065748_add_letters_collection";
@@ -41,5 +42,10 @@ export const migrations = [
     up: migrateCurriculumPages.up,
     down: migrateCurriculumPages.down,
     name: "20261104_055255_migrate_curriculum_pages",
+  },
+  {
+    up: migration_20261111_083704_add_class_pe_days.up,
+    down: migration_20261111_083704_add_class_pe_days.down,
+    name: "20261111_083704_add_class_pe_days",
   },
 ];

@@ -426,6 +426,16 @@ export interface Class {
     };
     [k: string]: unknown;
   };
+  /**
+   * Select the days this class has PE.
+   */
+  peDays?: {
+    monday?: boolean | null;
+    tuesday?: boolean | null;
+    wednesday?: boolean | null;
+    thursday?: boolean | null;
+    friday?: boolean | null;
+  };
   banner?: (number | null) | Media;
   primaryTeachers?: (number | Staff)[] | null;
   otherTeachers?: (number | Staff)[] | null;
@@ -846,6 +856,15 @@ export interface ClassesSelect<T extends boolean = true> {
   slug?: T;
   years?: T;
   description?: T;
+  peDays?:
+    | T
+    | {
+        monday?: T;
+        tuesday?: T;
+        wednesday?: T;
+        thursday?: T;
+        friday?: T;
+      };
   banner?: T;
   primaryTeachers?: T;
   otherTeachers?: T;

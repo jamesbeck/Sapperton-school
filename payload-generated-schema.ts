@@ -687,6 +687,11 @@ export const classes = pgTable(
     slug: varchar("slug"),
     years: varchar("years").notNull(),
     description: jsonb("description").notNull(),
+    peDays_monday: boolean("pe_days_monday").default(false),
+    peDays_tuesday: boolean("pe_days_tuesday").default(false),
+    peDays_wednesday: boolean("pe_days_wednesday").default(false),
+    peDays_thursday: boolean("pe_days_thursday").default(false),
+    peDays_friday: boolean("pe_days_friday").default(false),
     banner: integer("banner_id").references(() => media.id, {
       onDelete: "set null",
     }),

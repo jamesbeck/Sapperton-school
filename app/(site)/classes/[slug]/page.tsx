@@ -13,7 +13,9 @@ import { RichText } from "@payloadcms/richtext-lexical/react";
 import H1 from "@/components/ui/h1";
 import Link from "next/link";
 import ImageGallery from "@/components/imageGallery";
+import { PE_WEEKDAYS } from "@/utils/peDays";
 import {
+  CalendarDaysIcon,
   FileIcon,
   FileTextIcon,
   FileSpreadsheetIcon,
@@ -78,6 +80,7 @@ export default async function StaffPage({
 
   const schoolClass = schoolClasses.docs?.[0];
   if (!schoolClass) notFound();
+  const peDays = PE_WEEKDAYS.filter(({ name }) => schoolClass.peDays?.[name]);
   const image = schoolClass?.image as Media;
   const banner = schoolClass?.banner as Media;
 
@@ -166,6 +169,24 @@ export default async function StaffPage({
               className="page-content text-center"
             />
           </div>
+          {peDays.length > 0 && (
+            <section
+              aria-labelledby="pe-days-heading"
+              className="mx-auto flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl border border-sapperton-green/20 bg-sapperton-green/5 px-6 py-5 text-sapperton-green"
+            >
+              <h2 id="pe-days-heading" className="flex items-center gap-2 font-semibold">
+                <CalendarDaysIcon className="h-5 w-5" aria-hidden="true" />
+                PE days
+              </h2>
+              <ul className="flex flex-wrap justify-center gap-2">
+                {peDays.map(({ name, label }) => (
+                  <li key={name} className="rounded-full bg-sapperton-green px-4 py-1.5 text-sm font-medium text-white">
+                    {label}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
         </div>
       </Container>
 

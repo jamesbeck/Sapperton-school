@@ -133,6 +133,18 @@ The integration check verifies all content/version fields and media ordering,
 unchanged URLs after renaming, draft/public separation, rerun safety, menu cleanup
 and exact restoration, conflict guards, original retention and two-way news tags.
 
+## Class PE days
+
+In Payload, open **Classes**, select a class and tick its Monday–Friday checkboxes
+under **PE days**. Selected days appear beneath the class introduction in weekday
+order. With no days selected, the PE section is hidden. Saving uses the existing
+site cache invalidation so the next visit can show the updated days.
+
+Run the registered `20261111_083704_add_class_pe_days` migration before deploying
+the updated application. It adds five boolean columns, defaulting to unchecked,
+without changing existing class content. Reverting this migration removes the
+stored PE day selections.
+
 ## Public page caching
 
 Public pages use one-hour Incremental Static Regeneration (ISR), rather than

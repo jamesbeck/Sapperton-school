@@ -1,5 +1,6 @@
 import type { CollectionConfig } from "payload";
 import slugify from "slugify";
+import { PE_WEEKDAYS } from "../utils/peDays";
 
 export const Classes: CollectionConfig = {
   slug: "classes",
@@ -52,6 +53,20 @@ export const Classes: CollectionConfig = {
       name: "description",
       type: "richText",
       required: true,
+    },
+    {
+      name: "peDays",
+      label: "PE days",
+      type: "group",
+      admin: {
+        description: "Select the days this class has PE.",
+      },
+      fields: PE_WEEKDAYS.map(({ name, label }) => ({
+        name,
+        label,
+        type: "checkbox" as const,
+        defaultValue: false,
+      })),
     },
     {
       name: "banner",
